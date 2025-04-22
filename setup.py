@@ -11,5 +11,5 @@ setup(
     install_requires=["customtkinter==5.2.2",
                      "mysql-connector-python==9.2.0",
                      "numpy==2.2.4",
-                     "pandas==2.2.3",]
+                     "pandas==2.2.3"]
 )
