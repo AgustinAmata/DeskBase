@@ -7,10 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 from mysql.connector import errorcode
-# from datetime import datetime
 
-# #Variable global para almacenar la conexion
-cnx = None
 ctk.set_appearance_mode("light")
 
 LABELS = [
