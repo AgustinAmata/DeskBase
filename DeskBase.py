@@ -298,6 +298,7 @@ class DBWindow(ctk.CTkToplevel):
                         self.destroy()
                 
         except mysql.connector.Error as err:
+
             if err.errno == errorcode.ER_BAD_DB_ERROR:
                 ans = messagebox.askyesno("", message= f'''
                                     La base de datos {db} no existe.
@@ -601,7 +602,7 @@ class DBTab():
             affected_rows = push_query(self.master.master.master.menubar.dbwin,
                                        self.master.master.master.cnx,
                                        self.master.master.master.cursor,
-                                       f"SELECT * FROM `equipos` WHERE {filter_s}= %s",
+                                       f"SELECT * FROM `equipos` WHERE {filter_s} LIKE %s",
                                        params=(search,), fetch=True)
 
             if not affected_rows:
