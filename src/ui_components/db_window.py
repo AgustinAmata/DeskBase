@@ -1,7 +1,8 @@
 import customtkinter as ctk
+from src.db_manager import DBManager
 
 class DBWindow(ctk.CTkToplevel):
-    def __init__(self, master, db):
+    def __init__(self, master, db: DBManager):
         super().__init__(master)
         self.master = master
         self.db = db
@@ -29,10 +30,18 @@ class DBWindow(ctk.CTkToplevel):
         self.entry_pwrd.pack(fill="x")
         self.bttn_frame = ctk.CTkFrame(self.top_frame, fg_color=None)
         self.connect_bttn = ctk.CTkButton(self.bttn_frame, text="Conectar",
-                                          command=self.connect_database)
+                                          command=self.enter_db_data)
         self.connect_bttn.pack()
         self.bttn_frame.pack(side="bottom")
         self.info_frame.pack(fill="none", side="left", expand=True)
         self.entry_frame.pack(fill="none", side="right", expand=True)
         self.top_frame.place(anchor="center", relx=.5, rely=.5)
-        self.bind("<Return>", lambda event: self.connect_database())
+        self.bind("<Return>", lambda event: self.enter_db_data())
+
+    def enter_db_data(self):
+        user = self.entry_user.get()
+        host = self.entry_host.get()
+        pwrd = self.entry_pwrd.get()
+        db_name = self.entry_db.get()
+        if self.db.connect_to(user, pwrd, host, db_name):
+            self.destroy()
