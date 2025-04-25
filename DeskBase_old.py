@@ -670,7 +670,7 @@ class MainApp(ctk.CTk):
 
 if __name__ == "__main__":
     app = MainApp()
-    app.withdraw()
+    # app.withdraw()
 
     window_width = 1080
     window_height = 720
@@ -678,6 +678,6 @@ if __name__ == "__main__":
     position_down = app.winfo_screenheight()//2 - window_height/2
     app.geometry(f"{window_width}x{window_height}+{position_right}+{position_down}")
 
-    login_window = Login(app)
+    # login_window = Login(app)
 
     app.mainloop()
