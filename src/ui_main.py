@@ -11,11 +11,11 @@ class MainApp(ctk.CTk):
         self.geometry("1200x700")
         self.title("DeskBase")
         self.db = DBManager()
-        self.menubar = Menubar(self)
+        self.menubar = Menubar(self, self.db)
         # self.maintab = DBTab(self)
         self.protocol("WM_DELETE_WINDOW", self.close_everything)
 
     def close_everything(self):
         if self.db.cnx:
-            self.db.close_connection()
+            self.db.close_connection(show_msg=False)
         self.destroy()
