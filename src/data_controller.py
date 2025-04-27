@@ -8,6 +8,10 @@ from tkinter import messagebox
 def db_showentries(self, filtered_rows=None):
     self.table.delete(*self.table.get_children())
 
+    if not self.db.cnx:
+        messagebox.showerror("", "Conéctese a una base de datos primero")
+        return
+
     if filtered_rows:
         for row in filtered_rows:
             if row[6] in TREE_TAGS.keys():
@@ -19,11 +23,9 @@ def db_showentries(self, filtered_rows=None):
         return
 
     try:
-        devices = push_query(self.master.master.master.menubar.dbwin,
-                                self.master.master.master.cnx,
-                                self.master.master.master.cursor,
-                                "SELECT * FROM equipos", fetch=True)
-        self.master.master.master.cnx.commit()
+        devices = push_query(self.db,
+                             "SELECT * FROM equipos", fetch=True)
+        self.db.cnx.commit()
         if not devices:
             self.table.insert("", "end", values=["" for i in range(14)])
             self.table.tree_label.configure(text=f"Total de equipos: 0")
@@ -41,55 +43,57 @@ def db_showentries(self, filtered_rows=None):
         messagebox.showerror("", f"Error al cargar los equipos: {err}")
 
 def db_addentry(self):
-    campos_requeridos = (self.entries[0],
-                            self.entries[1],
-                            self.entries[2],
-                            self.entries[3])
+    if not self.db.cnx:
+        messagebox.showerror("", "Conéctese a una base de datos primero")
+        return
+
+    campos_requeridos = (self.info.entries[0],
+                            self.info.entries[1],
+                            self.info.entries[2],
+                            self.info.entries[3])
 
     for entry in campos_requeridos:
         if not entry.get().strip():
             messagebox.showwarning("Campos incompletos", "Por favor, completa al menos los campos marcados con * (tipo, serial, marca, modelo).")
             return
         
-    if self.entries[4].get():
+    if self.info.entries[4].get():
         try:
-            datetime.strptime(self.entries[4].get(), "%d/%m/%Y")
+            datetime.strptime(self.info.entries[4].get(), "%d/%m/%Y")
         except Exception as err:
             messagebox.showerror("Error", "Inserta el formato de fecha adecuado: dd/mm/aaaa")
             return
         
     try:
-        campos = [entry.get() for entry in self.entries]
+        campos = [entry.get() for entry in self.info.entries]
         serial = campos[3]
-        entry_exists = push_query(self.master.master.master.menubar.dbwin,
-                                    self.master.master.master.cnx,
-                                    self.master.master.master.cursor,
-                                    "SELECT * FROM `equipos` WHERE serial=%s",
-                                    params=[serial], fetch=True)
+        entry_exists = push_query(self.db,
+                                  "SELECT * FROM `equipos` WHERE serial=%s",
+                                  params=[serial], fetch=True)
         if entry_exists:
             if messagebox.askyesno("", f"Se ha encontrado un equipo con el serial {serial}. ¿Quiere actualizar sus campos?"):
-                push_query(self.master.master.master.menubar.dbwin,
-                        self.master.master.master.cnx,
-                        self.master.master.master.cursor,
+                push_query(self.db,
                         UPDATE_ENTRY, params=campos)
-                self.master.master.master.cnx.commit()
+                self.db.cnx.commit()
                 messagebox.showinfo("Éxito", "Equipo actualizado correctamente.")
 
         else:
-            push_query(self.master.master.master.menubar.dbwin,
-                    self.master.master.master.cnx,
-                    self.master.master.master.cursor,
+            push_query(self.db,
                     ADD_ENTRY, params=campos)
-            self.master.master.master.cnx.commit()
+            self.db.cnx.commit()
             messagebox.showinfo("Éxito", "Equipo guardado correctamente.")
 
     except Exception as err:
         messagebox.showerror("", f"Error: {err}")
     else:
-        self.db_showentries()
-        info_clear(self.entries)
+        db_showentries(self)
+        info_clear(self.info.entries)
 
 def db_loadrowinfo(self):
+    if not self.db.cnx:
+        messagebox.showerror("", "Conéctese a una base de datos primero")
+        return
+
     selected_row = self.table.selection()
     if not selected_row:
         messagebox.showwarning("Seleccionar equipo", "Seleccione un equipo para cargar.")
@@ -110,6 +114,10 @@ def db_loadrowinfo(self):
             entry.set(row[i])
 
 def db_deleterow(self):
+    if not self.db.cnx:
+        messagebox.showerror("", "Conéctese a una base de datos primero")
+        return
+
     selected_row = self.table.selection()
     if not selected_row:
         messagebox.showerror("Error", "No se puede identificar el equipo seleccionado.")
@@ -123,9 +131,7 @@ def db_deleterow(self):
 
     if messagebox.askyesno("Eliminar equipo", f"¿Quiere eliminar el equipo con serial {serial}?"):
         try:
-            affected_rows = push_query(self.master.master.master.menubar.dbwin,
-                    self.master.master.master.cnx,
-                    self.master.master.master.cursor,
+            affected_rows = push_query(self.db,
                     "DELETE FROM `equipos` WHERE serial= %s", params=[serial])
 
             if not affected_rows:
@@ -136,11 +142,11 @@ def db_deleterow(self):
             messagebox.showerror("Error", f"Sucedió el siguiente error: {err}")
         else:
             messagebox.showinfo("", "Equipo eliminado correctamente")
-            self.db_showentries()
+            db_showentries(self)
             info_clear(self.info.entries)
 
 def db_search(self):
-    if not self.master.master.master.cnx:
+    if not self.db.cnx:
         messagebox.showerror("", "Conéctese a una base de datos primero")
         return
 
@@ -148,13 +154,11 @@ def db_search(self):
     filter_s = LABEL_CONVERSION[self.table.search_filter.get()]
 
     if search == "":
-        self.db_showentries()
+        db_showentries(self)
         return
 
     try:
-        affected_rows = push_query(self.master.master.master.menubar.dbwin,
-                                    self.master.master.master.cnx,
-                                    self.master.master.master.cursor,
+        affected_rows = push_query(self.db,
                                     f"SELECT * FROM `equipos` WHERE {filter_s} LIKE %s",
                                     params=(search,), fetch=True)
 
@@ -164,7 +168,7 @@ def db_search(self):
             self.table.tree_label.configure(text=f"Total de equipos: 0")
             return
 
-        self.db_showentries(affected_rows)
+        db_showentries(self, affected_rows)
 
     except Exception as err:
         messagebox.showerror("Error", f"Error: {err}")
