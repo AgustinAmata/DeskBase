@@ -1,11 +1,14 @@
 import customtkinter as ctk
+from src.data_controller import db_showentries
 from src.db_manager import DBManager
+from src.ui_components.db_tab import DBTab
 
 class DBWindow(ctk.CTkToplevel):
-    def __init__(self, master, db: DBManager):
+    def __init__(self, master, db: DBManager, db_tab: DBTab):
         super().__init__(master)
         self.master = master
         self.db = db
+        self.db_tab = db_tab
         self.geometry("400x300")
         self.title("Conectar a base de datos")
         self.wm_transient(master)
@@ -44,4 +47,5 @@ class DBWindow(ctk.CTkToplevel):
         pwrd = self.entry_pwrd.get()
         db_name = self.entry_db.get()
         if self.db.connect_to(user, pwrd, host, db_name):
+            db_showentries(self.db_tab)
             self.destroy()
