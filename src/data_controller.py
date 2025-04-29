@@ -72,6 +72,7 @@ def db_addentry(self):
                                   params=[serial], fetch=True)
         if entry_exists:
             if messagebox.askyesno("", f"Se ha encontrado un equipo con el serial {serial}. ¿Quiere actualizar sus campos?"):
+                campos.append(entry_exists[0][0])
                 push_query(self.db,
                         UPDATE_ENTRY, params=campos)
                 self.db.cnx.commit()
