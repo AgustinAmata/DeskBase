@@ -57,26 +57,20 @@ ADD_ENTRY = '''INSERT INTO `equipos`
                `capacidad_ram`)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
 
-UPDATE_ENTRY = '''INSERT INTO `equipos`
-    (`nombre`, `marca`, `modelo`, `serial`,
-     `fecha_adquisicion`, `estado`, `ubicacion`,
-     `sistema_operativo`, `modelo_placa_base`,
-     `tarjeta_grafica`, `tipo_almacenamiento`,
-     `capacidad_almacenamiento`, `memoria_ram`,
-     `capacidad_ram`)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE 
-        nombre=VALUES(nombre),
-        marca=VALUES(marca),
-        modelo=VALUES(modelo),
-        fecha_adquisicion=VALUES(fecha_adquisicion),
-        estado=VALUES(estado),
-        ubicacion=VALUES(ubicacion),
-        sistema_operativo=VALUES(sistema_operativo),
-        modelo_placa_base=VALUES(modelo_placa_base),
-        tarjeta_grafica=VALUES(tarjeta_grafica),
-        tipo_almacenamiento=VALUES(tipo_almacenamiento),
-        capacidad_almacenamiento=VALUES(capacidad_almacenamiento),
-        memoria_ram=VALUES(memoria_ram),
-        capacidad_ram=VALUES(capacidad_ram)
+UPDATE_ENTRY = '''UPDATE `equipos` SET
+        nombre=%s,
+        marca=%s,
+        modelo=%s,
+        serial=%s,
+        fecha_adquisicion=%s,
+        estado=%s,
+        ubicacion=%s,
+        sistema_operativo=%s,
+        modelo_placa_base=%s,
+        tarjeta_grafica=%s,
+        tipo_almacenamiento=%s,
+        capacidad_almacenamiento=%s,
+        memoria_ram=%s,
+        capacidad_ram=%s
+        WHERE `id`=%s
 '''
