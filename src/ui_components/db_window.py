@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from tkinter import messagebox
 from src.data_controller import db_showentries
 from src.db_manager import DBManager
 from src.ui_components.db_tab import DBTab
@@ -46,6 +47,9 @@ class DBWindow(ctk.CTkToplevel):
         host = self.entry_host.get()
         pwrd = self.entry_pwrd.get()
         db_name = self.entry_db.get()
+        if not db_name:
+            messagebox.showerror("", "Inserte una base de datos")
+            return
         if self.db.connect_to(user, pwrd, host, db_name):
             db_showentries(self.db_tab)
             self.destroy()
