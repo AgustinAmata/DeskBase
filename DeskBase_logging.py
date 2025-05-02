@@ -1,7 +1,6 @@
 import logging
 class standardFilter(logging.Filter):
     def filter(self, record):
-        print(record)
         return record.levelno != logging.ERROR
 
 class errorFilter(logging.Filter):
