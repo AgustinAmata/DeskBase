@@ -1,9 +1,12 @@
 import customtkinter as ctk
+import logging
 from datetime import datetime
 from src.constants import TREE_TAGS, ADD_ENTRY, UPDATE_ENTRY, LABEL_CONVERSION
 from src.db_manager import push_query
 from src.logic import info_clear
 from tkinter import messagebox
+
+logger = logging.getLogger(__name__)
 
 def db_showentries(self, filtered_rows=None):
     self.table.delete(*self.table.get_children())
@@ -40,6 +43,7 @@ def db_showentries(self, filtered_rows=None):
         self.table.tree_label.configure(text=f"Total de equipos: {len(devices)}")
 
     except Exception as err:
+        logger.error("Error while trying to load device list into DeskBase", exc_info=True)
         messagebox.showerror("", f"Error al cargar los equipos: {err}")
 
 def db_addentry(self):
@@ -76,15 +80,18 @@ def db_addentry(self):
                 push_query(self.db,
                         UPDATE_ENTRY, params=campos)
 
+                logger.info("Updated device with serial: %s and id: %s", serial, campos[-1])
                 messagebox.showinfo("Éxito", "Equipo actualizado correctamente.")
 
         else:
             push_query(self.db,
                     ADD_ENTRY, params=campos)
 
+            logger.info("Saved device with serial: %s in database", serial)
             messagebox.showinfo("Éxito", "Equipo guardado correctamente.")
 
     except Exception as err:
+        logger.error("Error while trying to save/update device", exc_info=True)
         messagebox.showerror("", f"Error: {err}")
     else:
         db_showentries(self)
@@ -136,12 +143,15 @@ def db_deleterow(self):
                     "DELETE FROM `equipos` WHERE serial= %s", params=[serial])
 
             if not affected_rows:
+                logger.error("Tried to remove device with serial: %s, but it was not found in the database", serial)
                 messagebox.showerror("Error", "No se ha encontrado el equipo con el serial seleccionado")
                 return
 
         except Exception as err:
+            logger.error("Error while trying to remove device from database", exc_info=True)
             messagebox.showerror("Error", f"Sucedió el siguiente error: {err}")
         else:
+            logger.info("Device with serial: %s has been removed", serial)
             messagebox.showinfo("", "Equipo eliminado correctamente")
             db_showentries(self)
             info_clear(self.info.entries)
@@ -172,4 +182,5 @@ def db_search(self):
         db_showentries(self, affected_rows)
 
     except Exception as err:
+        logger.error("Error while trying to search in the DeskBase table", exc_info=True)
         messagebox.showerror("Error", f"Error: {err}")
