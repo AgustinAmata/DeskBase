@@ -25,7 +25,7 @@ def db_showentries(self, filtered_rows=None):
     try:
         devices = push_query(self.db,
                              "SELECT * FROM equipos", fetch=True)
-        self.db.cnx.commit()
+
         if not devices:
             self.table.insert("", "end", values=["" for i in range(14)])
             self.table.tree_label.configure(text=f"Total de equipos: 0")
@@ -75,13 +75,13 @@ def db_addentry(self):
                 campos.append(entry_exists[0][0])
                 push_query(self.db,
                         UPDATE_ENTRY, params=campos)
-                self.db.cnx.commit()
+
                 messagebox.showinfo("Éxito", "Equipo actualizado correctamente.")
 
         else:
             push_query(self.db,
                     ADD_ENTRY, params=campos)
-            self.db.cnx.commit()
+
             messagebox.showinfo("Éxito", "Equipo guardado correctamente.")
 
     except Exception as err:
