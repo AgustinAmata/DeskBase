@@ -1,7 +1,11 @@
 import customtkinter as ctk
+import re
 from src.db_manager import DBManager
 from src.ui_components.menubar import Menubar
 from src.ui_components.db_tab import DBTab
+from src.ui_components.login import LoginWindow
+from src.constants import TEST_QUERIES
+from src.db_manager import push_query
 
 ctk.set_appearance_mode("light")
 
@@ -13,13 +17,37 @@ class MainApp(ctk.CTk):
         self.db = DBManager()
         self.maintab = MainTab(self, self.db)
         self.db_tab = self.maintab.devices_obj
+        self.login = LoginWindow(self, self.db, self.db_tab)
         self.menubar = Menubar(self, self.db, self.db_tab)
+        self.privs = {
+                      "SELECT": False,
+                      "CREATE": False,
+                      "UPDATE": False,
+                      "DELETE": False,
+                      "INSERT": False
+                      }
         self.protocol("WM_DELETE_WINDOW", self.close_everything)
+        self.withdraw()
 
     def close_everything(self):
         if self.db.cnx:
             self.db.close_connection(show_msg=False)
         self.destroy()
+
+    def check_privileges(self):
+        grants = push_query(self.db, "SHOW GRANTS FOR current_user()", fetch=True)
+    
+        for key, priv_re in TEST_QUERIES.items():
+            for grant in grants:
+                priv_found = re.search(priv_re.format(db_name=self.db.db_name), grant[0])
+                if priv_found:
+                    self.privs[key] = True
+                    break
+                else:
+                    self.privs[key] = False
+
+    def update_privileges(self):
+        pass
 
 class MainTab(ctk.CTkTabview):
     def __init__(self, master, db: DBManager):
