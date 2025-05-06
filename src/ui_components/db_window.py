@@ -51,5 +51,7 @@ class DBWindow(ctk.CTkToplevel):
             messagebox.showerror("", "Inserte una base de datos")
             return
         if self.db.connect_to(user, pwrd, host, db_name):
+            self.master.check_privileges()
+            self.master.update_privileges()
             db_showentries(self.db_tab)
             self.destroy()
