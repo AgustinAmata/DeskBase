@@ -25,11 +25,14 @@ class DBManager():
                                                database=db_name,
                                                connection_timeout=10)
             self.cursor = self.cnx.cursor()
+
             if not self.check_table_exists():
                 logger.warning("DeskBase table not found in database. Waiting for user input")
                 if messagebox.askyesno("", message="No existe la tabla necesaria para el inventariado. ¿Desea crearla?"):
                     logger.info("User decided to create DeskBase table at database %s", db_name)
-                    self.create_table()
+                    if not self.create_table():
+                        self.close_connection(show_msg=False)
+                        return False
                 else:
                     logger.info("User declined creating a DeskBase table. Connection to database aborted")
                     messagebox.showwarning("", "Introduzca otra base de datos")
@@ -37,22 +40,27 @@ class DBManager():
 
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_BAD_DB_ERROR:
-                logger.error("Database %s does not exist", db_name)
+                logger.error("Database '%s' does not exist", db_name)
                 messagebox.showerror("", f"La base de datos '{db_name}' no existe")
             elif err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 logger.error("Incorrect user or password")
                 messagebox.showerror("", "El usuario o la contraseña son incorrectos")
             else:
-                logger.error("Mysql error: %s", err)
-                messagebox.showerror("", err)
+                logger.exception("MySQL error during connection")
+                messagebox.showerror("", f"Error de MySQL: {err}")
+            return False
+
+        except Exception as e:
+            logger.exception("Unexpected error during database connection")
+            messagebox.showerror("", f"Error inesperado: {e}")
             return False
 
         else:
             if not self.cnx.is_connected():
-                logger.error("Connection to database %s could not be established", db_name)
+                logger.error("Connection to database '%s' could not be established", db_name)
                 messagebox.showerror("", "No se ha podido conectar a la base de datos")
                 return False
-            
+
             self.usr, self.pwrd, self.hst, self.db_name = usr, pwrd, hst, db_name
 
             logger.info("Connection to database established")
@@ -62,12 +70,25 @@ class DBManager():
     def create_table(self):
         try:
             self.cursor.execute(TABLE_CREATION)
+
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_TABLEACCESS_DENIED_ERROR:
+                logger.error("Permission denied to create table")
+                messagebox.showerror("", "El usuario no tiene el permiso necesario para crear la tabla")
+            else:
+                logger.exception("MySQL error while creating table")
+                messagebox.showerror("", f"Error de MySQL: {err}")
+            return False
+
         except Exception as err:
-            logger.error("Exception while creating DeskBase table", exc_info=True)
-            messagebox.showerror("", err)
+            logger.exception("Unexpected exception while creating DeskBase table")
+            messagebox.showerror("", f"Error inesperado: {err}")
+            return False
+
         else:
             logger.info("DeskBase table created")
             messagebox.showinfo("", "Tabla 'equipos' creada")
+            return True
 
     def check_table_exists(self):
         self.cursor.execute("SHOW TABLES")
