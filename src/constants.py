@@ -74,3 +74,11 @@ UPDATE_ENTRY = '''UPDATE `equipos` SET
         capacidad_ram=%s
         WHERE `id`=%s
 '''
+
+TEST_QUERIES = {
+                "SELECT": r"(SELECT(,| ON )).*((\*.\*)|((|`){db_name}(|`).\*))",
+                "CREATE": r"(CREATE(,| ON)).*((\*.\*)|((|`){db_name}(|`).\*))",
+                "UPDATE": r"(UPDATE(,| ON)).*((\*.\*)|((|`){db_name}(|`).\*))",
+                "DELETE": r"(DELETE(,| ON)).*((\*.\*)|((|`){db_name}(|`).\*))",
+                "INSERT": r"(INSERT(,| ON)).*((\*.\*)|((|`){db_name}(|`).\*))"
+                }
