@@ -3,6 +3,7 @@ from tkinter import messagebox
 from src.data_controller import db_showentries
 from src.db_manager import DBManager
 from src.ui_components.db_tab import DBTab
+from src.logic import info_clear
 
 class DBWindow(ctk.CTkToplevel):
     def __init__(self, master, db: DBManager, db_tab: DBTab):
@@ -52,6 +53,13 @@ class DBWindow(ctk.CTkToplevel):
             return
         if self.db.connect_to(user, pwrd, host, db_name):
             self.master.check_privileges()
+            if self.master.privs["SELECT"] == False:
+                messagebox.showwarning("", "El usuario no tiene el permiso necesario (SELECT) para visualizar los equipos, inténtelo con otro usuario")
+                self.db.close_connection(show_msg=False)
+                return
             self.master.update_privileges()
+            if not self.db_tab.table.hidden:
+                self.db_tab.table.hide_show_dbinfo()
+            info_clear(self.db_tab.info.entries)
             db_showentries(self.db_tab)
             self.destroy()
