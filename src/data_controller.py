@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import logging
+import mysql.connector
 from datetime import datetime
 from src.constants import TREE_TAGS, ADD_ENTRY, UPDATE_ENTRY, LABEL_CONVERSION
 from src.db_manager import push_query
@@ -90,8 +91,18 @@ def db_addentry(self):
             logger.info("Saved device with serial: %s in database", serial)
             messagebox.showinfo("Éxito", "Equipo guardado correctamente.")
 
+    except mysql.connector.Error as err:
+        if "UPDATE command" in str(err):
+            messagebox.showerror("","El usuario no tiene permisos para modificar entradas")
+
+        elif "INSERT command" in str(err):
+            messagebox.showerror("","El usuario no tiene permisos para añadir entradas")
+
+        else:
+            messagebox.showerror("", f"Sucedió el siguiente error: {err}")
+
     except Exception as err:
-        logger.error("Error while trying to save/update device", exc_info=True)
+        logger.exception("Error while trying to save/update device")
         messagebox.showerror("", f"Error: {err}")
     else:
         db_showentries(self)
@@ -146,6 +157,12 @@ def db_deleterow(self):
                 logger.error("Tried to remove device with serial: %s, but it was not found in the database", serial)
                 messagebox.showerror("Error", "No se ha encontrado el equipo con el serial seleccionado")
                 return
+
+        except mysql.connector.Error as err:
+            if "DELETE command" in str(err):
+                messagebox.showerror("","El usuario no tiene permisos para eliminar entradas")
+            else:
+                messagebox.showerror("", f"Sucedió el siguiente error: {err}")
 
         except Exception as err:
             logger.error("Error while trying to remove device from database", exc_info=True)
