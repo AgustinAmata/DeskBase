@@ -27,6 +27,7 @@ class MainApp(ctk.CTk):
                       "INSERT": False
                       }
         self.protocol("WM_DELETE_WINDOW", self.close_everything)
+        self.update_privileges()
         self.withdraw()
 
     def close_everything(self):
@@ -47,7 +48,28 @@ class MainApp(ctk.CTk):
                     self.privs[key] = False
 
     def update_privileges(self):
-        pass
+        sub_dict = {k:v for k,v in self.privs.items() if k in ["UPDATE", "DELETE", "INSERT"]}
+        state_bool = {False: "disabled", True: "normal"}
+        val = [False if v==False else True for v in sub_dict.values()]
+        if not any(val):
+            self.maintab.devices_obj.table.device_add_bttn.configure(state="disabled")
+            for child in self.maintab.devices_obj.info.options_frame.winfo_children():
+                if type(child) == ctk.CTkButton:
+                    child.configure(state="disabled")
+            for i in ["Limpiar campos", "Eliminar equipo", "Cargar equipo"]:
+                self.menubar.m2.entryconfigure(i, state="disabled")
+            self.maintab.devices_obj.table.unbind("<Double-1>")
+
+        else:
+            self.maintab.devices_obj.table.device_add_bttn.configure(state="normal")
+            self.maintab.devices_obj.table.bind("<Double-1>", lambda e: self.maintab.devices_obj.table.load_selected_row())
+            self.maintab.devices_obj.info.options_loadrow.configure(state="normal")
+            self.maintab.devices_obj.info.options_clear.configure(state="normal")
+            self.maintab.devices_obj.info.options_addrow.configure(state=state_bool[sub_dict["UPDATE"]])
+            self.maintab.devices_obj.info.options_deleterow.configure(state=state_bool[sub_dict["DELETE"]])
+            self.menubar.m2.entryconfigure("Limpiar campos", state="normal")
+            self.menubar.m2.entryconfigure("Cargar equipo", state="normal")
+            self.menubar.m2.entryconfigure("Eliminar equipo", state=state_bool[sub_dict["DELETE"]])
 
 class MainTab(ctk.CTkTabview):
     def __init__(self, master, db: DBManager):
