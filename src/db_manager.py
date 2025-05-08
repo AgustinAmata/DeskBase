@@ -113,13 +113,14 @@ class DBManager():
         self.connect_to(self.usr, self.pwrd, self.hst, self.db_name)
 
 def push_query(db: DBManager, query, params=None, fetch=False):
+    if db.cnx is None:
+        messagebox.showwarning("", "Establezca primero una conexión con una base de datos")
+        return
+    
     logger.info("Trying to send query \n%s\n with params: \n%s\nand fetch=%s", query, params, fetch)
+    
     for n_try in range(5):
         try:
-            if db.cnx is None:
-                messagebox.showwarning("", "Establezca primero una conexión con una base de datos")
-                return
-
             db.cursor.execute(query, params)
             logger.info("Executed query in database: \n%s", db.cursor.statement)
 
@@ -143,13 +144,22 @@ def push_query(db: DBManager, query, params=None, fetch=False):
                         logger.warning("Reconnected to database")
                     except:
                         pass
-
+            elif "UPDATE command" in str(err):
+                logger.error("Permission denied to update entry")
+                raise err
+            elif "DELETE command" in str(err):
+                logger.error("Permission denied to delete entry")
+                raise err
+            elif "INSERT command" in str(err):
+                logger.error("Permission denied to insert entry")
+                raise err
+            
             else:
-                logger.error("Error while trying to send a query to database", exc_info=True)
+                logger.exception("Error while trying to send a query to database")
                 raise err
             
         except Exception as err:
-            logger.error("Error while trying to send a query to database", exc_info=True)
+            logger.exception("Error while trying to send a query to database")
             raise err
 
     logger.error("Query to database could not be sent after multiple attempts")
