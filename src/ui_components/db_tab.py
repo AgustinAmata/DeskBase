@@ -26,7 +26,7 @@ class DBView(ttk.Treeview):
         self.db_tab = db_tab
         self.search_frame = ctk.CTkFrame(master, fg_color=None)
         self.search_label = ctk.CTkLabel(self.search_frame, text="Buscar:")
-        self.search_filter = ctk.CTkComboBox(self.search_frame, values=LABELS)
+        self.search_filter = ctk.CTkComboBox(self.search_frame, values=LABELS[:16])
         self.search_bar = ctk.CTkEntry(self.search_frame)
         self.search_bttn = ctk.CTkButton(self.search_frame, text="Buscar", command=lambda: db_search(self.db_tab), width=70)
         self.clear_bttn = ctk.CTkButton(self.search_frame, text="Limpiar búsqueda", command= lambda: self.clear_search())
@@ -113,7 +113,7 @@ class DBInfo(ctk.CTkFrame):
         self.label_frame_title = ctk.CTkLabel(self.label_frame, text="Información", font=("Arial", 14, "bold"), anchor="w", padx=20, pady=10)
         self.label_frame_title.grid(row=0, column=0, columnspan=2, pady=(3, 10), sticky="ew", padx=3)
 
-        for i, label in enumerate(LABELS):
+        for i, label in enumerate(LABELS[:16]):
             ctk.CTkLabel(self.label_frame, text=label).grid(row=i+1, column=0, sticky="ew", padx=3)
 
             if label in RULETA:
