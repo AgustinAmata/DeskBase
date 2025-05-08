@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import tkinter as tk
+import tkinter as tk
 from src.db_manager import DBManager
 from src.constants import LABELS, RULETA
 from src.data_controller import db_addentry, db_deleterow, db_loadrowinfo, db_search
@@ -7,15 +8,16 @@ from src.logic import info_clear
 from tkinter import ttk
 
 class DBTab():
-    def __init__(self, master, db: DBManager):
+    def __init__(self, master: tk.Frame, db: DBManager):
         self.master = master
         self.db = db
         self.tree_frame = ctk.CTkFrame(master, fg_color="transparent")
         self.info_frame = ctk.CTkFrame(master, fg_color="transparent")
-        self.table = DBView(self.tree_frame, self.db, self)
         self.info = DBInfo(self.info_frame, self.db, self)
-        self.info_frame.pack(side="right", fill="both", expand=True)
-        self.tree_frame.pack(after=self.info_frame, side="left", fill="both", expand=True)
+        self.table = DBView(self.tree_frame, self.db, self)
+        self.master.grid_columnconfigure(0, weight=3)
+        self.master.grid_rowconfigure(0, weight=1)
+        self.tree_frame.grid(row=0, column=0, sticky="nsew")
 
 class DBView(ttk.Treeview):
     def __init__(self, master, db: DBManager, db_tab: DBTab):
@@ -26,8 +28,9 @@ class DBView(ttk.Treeview):
         self.search_label = ctk.CTkLabel(self.search_frame, text="Buscar:")
         self.search_filter = ctk.CTkComboBox(self.search_frame, values=LABELS)
         self.search_bar = ctk.CTkEntry(self.search_frame)
-        self.search_bttn = ctk.CTkButton(self.search_frame, text="Buscar", command=lambda: db_search(self.db_tab))
+        self.search_bttn = ctk.CTkButton(self.search_frame, text="Buscar", command=lambda: db_search(self.db_tab), width=70)
         self.clear_bttn = ctk.CTkButton(self.search_frame, text="Limpiar búsqueda", command= lambda: self.clear_search())
+        self.device_add_bttn = ctk.CTkButton(self.search_frame, text="Agregar/modificar equipo", command= lambda: self.hide_show_dbinfo())
         self.scrollbar_y = ctk.CTkScrollbar(master)
         self.scrollbar_x = ctk.CTkScrollbar(master, orientation="horizontal")
         self.scrollbar_x.pack(side="bottom", fill="x")
@@ -35,6 +38,7 @@ class DBView(ttk.Treeview):
         self.scrollbar_x.configure(command=self.xview)
         self.tree_label_frame = ctk.CTkFrame(master, fg_color=None)
         self.tree_label = ctk.CTkLabel(self.tree_label_frame, text="Número de equipos: 0", anchor="w")
+        self.hidden = True
 
         super().__init__(master,
             columns=["ID"] + LABELS, 
@@ -58,17 +62,31 @@ class DBView(ttk.Treeview):
         self.search_bar.pack(side="left")
         self.search_bttn.pack(side="left")
         self.clear_bttn.pack(side="left")
+        self.device_add_bttn.pack(side="right")
         self.search_frame.pack(side="top", fill="x")
         self.pack(fill="both", expand=True)
         self.tree_label.pack(side="bottom", fill="x", anchor="s")
         self.tree_label_frame.pack(before=self.scrollbar_x, side="bottom", fill="x", anchor="s")
         self.scrollbar_y.pack(after=self.search_frame, side="right", fill="y")
-        self.bind("<Double-1>", lambda e: db_loadrowinfo(self.db_tab))
+        self.bind("<Double-1>", lambda e: self.load_selected_row())
         self.search_bar.bind("<Return>", lambda e: db_search(self.db_tab))
 
     def clear_search(self):
         self.search_filter.set(self.search_filter._values[0])
         self.search_bar.delete(0, tk.END)
+
+    def hide_show_dbinfo(self):
+        if not self.hidden:
+            self.db_tab.info_frame.grid_remove()
+            self.hidden = True
+        else:
+            self.db_tab.info_frame.grid(row=0, column=1, sticky="nsew")
+            self.hidden = False
+
+    def load_selected_row(self):
+        db_loadrowinfo(self.db_tab)
+        if self.hidden:
+            self.hide_show_dbinfo()
 
 class DBInfo(ctk.CTkFrame):
     def __init__(self, master, db: DBManager, db_tab: DBTab):
@@ -92,7 +110,6 @@ class DBInfo(ctk.CTkFrame):
         self.pack(fill="both", expand=True)
         self.label_frame.grid_columnconfigure(1, weight=1)
 
-        # Título interno del frame
         self.label_frame_title = ctk.CTkLabel(self.label_frame, text="Información", font=("Arial", 14, "bold"), anchor="w", padx=20, pady=10)
         self.label_frame_title.grid(row=0, column=0, columnspan=2, pady=(3, 10), sticky="ew", padx=3)
 
@@ -116,7 +133,7 @@ class DBInfo(ctk.CTkFrame):
         self.options_frame = ctk.CTkFrame(self, fg_color=None)
         self.options_frame.rowconfigure((0, 1), weight=1)
         self.options_frame.columnconfigure((0, 1), weight=1)
-        self.options_addrow = ctk.CTkButton(self.options_frame, text="Guardar", command=lambda: db_addentry(self.db_tab))
+        self.options_addrow = ctk.CTkButton(self.options_frame, text="Guardar/Modificar", command=lambda: db_addentry(self.db_tab))
         self.options_clear = ctk.CTkButton(self.options_frame, text="Limpiar campos", command=lambda: info_clear(self.entries))
         self.options_loadrow = ctk.CTkButton(self.options_frame, text="Cargar equipo", command=lambda: db_loadrowinfo(self.db_tab))
         self.options_deleterow = ctk.CTkButton(self.options_frame, text="Eliminar equipo", command=lambda: db_deleterow(self.db_tab))
