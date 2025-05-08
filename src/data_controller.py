@@ -31,7 +31,7 @@ def db_showentries(self, filtered_rows=None):
                              "SELECT * FROM equipos", fetch=True)
 
         if not devices:
-            self.table.insert("", "end", values=["" for i in range(14)])
+            self.table.insert("", "end", values=["" for i in range(19)])
             self.table.tree_label.configure(text=f"Total de equipos: 0")
             return
 
@@ -107,6 +107,8 @@ def db_addentry(self):
     else:
         db_showentries(self)
         info_clear(self.info.entries)
+        if not self.table.hidden:
+            self.table.hide_show_dbinfo()
 
 def db_loadrowinfo(self):
     if not self.db.cnx:
@@ -120,7 +122,7 @@ def db_loadrowinfo(self):
     
     row = self.table.item(selected_row)["values"]
 
-    if len(row) != 15:
+    if len(row) != 19:
         messagebox.showerror("Error", "El formato de datos no es el esperado.")
         return
 
@@ -172,6 +174,8 @@ def db_deleterow(self):
             messagebox.showinfo("", "Equipo eliminado correctamente")
             db_showentries(self)
             info_clear(self.info.entries)
+            if not self.table.hidden:
+                self.table.hide_show_dbinfo()
 
 def db_search(self):
     if not self.db.cnx:
@@ -192,7 +196,7 @@ def db_search(self):
 
         if not affected_rows:
             self.table.delete(*self.table.get_children())
-            self.table.insert("", "end", values=["" for i in range(14)])
+            self.table.insert("", "end", values=["" for i in range(19)])
             self.table.tree_label.configure(text=f"Total de equipos: 0")
             return
 
