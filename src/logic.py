@@ -52,8 +52,8 @@ def convert_to_excel(self):
             messagebox.showerror("Error", f"Error al exportar: {str(e)}")
 
 def info_clear(entries):
-    for entry in entries:
-        if type(entry) == ctk.CTkComboBox:
+    for i, entry in enumerate(entries):
+        if type(entry) == ctk.CTkOptionMenu:
             entry.set(entry._values[0])
         elif type(entry) == ctk.CTkEntry:
             entry.delete(0, tk.END)
