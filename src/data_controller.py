@@ -1,8 +1,7 @@
 import customtkinter as ctk
 import logging
 import mysql.connector
-from datetime import datetime
-from src.constants import TREE_TAGS, ADD_ENTRY, UPDATE_ENTRY, LABEL_CONVERSION
+from src.constants import TREE_TAGS, ADD_ENTRY, UPDATE_ENTRY, LABEL_CONVERSION, LABELS
 from src.db_manager import push_query
 from src.logic import info_clear
 from tkinter import messagebox
@@ -18,8 +17,8 @@ def db_showentries(self, filtered_rows=None):
 
     if filtered_rows:
         for row in filtered_rows:
-            if row[6] in TREE_TAGS.keys():
-                self.table.insert("", "end", values=row, tags=(TREE_TAGS[row[6]],))
+            if row[LABELS.index("Ubicación")] in TREE_TAGS.keys():
+                self.table.insert("", "end", values=row, tags=(TREE_TAGS[row[LABELS.index("Ubicación")]],))
             else:
                 self.table.insert("", "end", values=row)
 
@@ -31,13 +30,13 @@ def db_showentries(self, filtered_rows=None):
                              "SELECT * FROM equipos", fetch=True)
 
         if not devices:
-            self.table.insert("", "end", values=["" for i in range(19)])
+            self.table.insert("", "end", values=["" for i in range(len(LABELS)+1)])
             self.table.tree_label.configure(text=f"Total de equipos: 0")
             return
 
         for device in devices:
-            if device[6] in TREE_TAGS.keys():
-                self.table.insert("", "end", values=device, tags=(TREE_TAGS[device[6]],))
+            if device[LABELS.index("Ubicación")] in TREE_TAGS.keys():
+                self.table.insert("", "end", values=device, tags=(TREE_TAGS[device[LABELS.index("Ubicación")]],))
             else:
                 self.table.insert("", "end", values=device)
 
@@ -51,27 +50,10 @@ def db_addentry(self):
     if not self.db.cnx:
         messagebox.showerror("", "Conéctese a una base de datos primero")
         return
-
-    campos_requeridos = (self.info.entries[0],
-                            self.info.entries[1],
-                            self.info.entries[2],
-                            self.info.entries[3])
-
-    for entry in campos_requeridos:
-        if not entry.get().strip():
-            messagebox.showwarning("Campos incompletos", "Por favor, completa al menos los campos marcados con * (tipo, serial, marca, modelo).")
-            return
-        
-    if self.info.entries[4].get():
-        try:
-            datetime.strptime(self.info.entries[4].get(), "%d/%m/%Y")
-        except Exception as err:
-            messagebox.showerror("Error", "Inserta el formato de fecha adecuado: dd/mm/aaaa")
-            return
         
     try:
         campos = [entry.get() for entry in self.info.entries]
-        serial = campos[3]
+        serial = campos[LABELS.index("Serial*")]
         entry_exists = push_query(self.db,
                                   "SELECT * FROM `equipos` WHERE serial=%s",
                                   params=[serial], fetch=True)
@@ -122,7 +104,7 @@ def db_loadrowinfo(self):
     
     row = self.table.item(selected_row)["values"]
 
-    if len(row) != 19:
+    if len(row) != len(LABELS)+1:
         messagebox.showerror("Error", "El formato de datos no es el esperado.")
         return
 
@@ -131,7 +113,7 @@ def db_loadrowinfo(self):
     for i, entry in enumerate(self.info.entries, 1):
         if type(entry) == ctk.CTkEntry:
             entry.insert(0, row[i])
-        elif type(entry) == ctk.CTkComboBox:
+        elif type(entry) == ctk.CTkOptionMenu:
             entry.set(row[i])
 
 def db_deleterow(self):
@@ -177,7 +159,7 @@ def db_deleterow(self):
             if not self.table.hidden:
                 self.table.hide_show_dbinfo()
 
-def db_search(self):
+def db_search(self, strict):
     if not self.db.cnx:
         messagebox.showerror("", "Conéctese a una base de datos primero")
         return
@@ -190,13 +172,22 @@ def db_search(self):
         return
 
     try:
+        search_query = f"SELECT * FROM `equipos` WHERE {filter_s} LIKE "
+        strict_str = f"'{search}'"
+        non_strict_str = f"'%{search}%'"
+
+        if strict:
+            search_query += strict_str
+        else:
+            search_query += non_strict_str
+
         affected_rows = push_query(self.db,
-                                    f"SELECT * FROM `equipos` WHERE {filter_s} LIKE %s",
-                                    params=(search,), fetch=True)
+                                    search_query,
+                                    fetch=True)
 
         if not affected_rows:
             self.table.delete(*self.table.get_children())
-            self.table.insert("", "end", values=["" for i in range(19)])
+            self.table.insert("", "end", values=["" for i in range(len(LABELS)+1)])
             self.table.tree_label.configure(text=f"Total de equipos: 0")
             return
 
