@@ -1,20 +1,20 @@
 LABELS = [
     "Tipo*", "Marca*", "Modelo*", "Serial*", 
     "Fecha de Adquisición", "Estado",
-    "Ubicación", "Sistema Operativo", "Modelo Placa Base", "Tarjeta Gráfica",
-    "Modelo Tarjeta Gráfica", "RAM Tarjeta Gráfica (GB)",
+    "Ubicación", "Sistema Operativo", "Modelo CPU", "Modelo Placa Base",
+    "Tarjeta Gráfica", "Modelo Tarjeta Gráfica", "RAM Tarjeta Gráfica (GB)",
     "Tipo de Almacenamiento", "Capacidad de Almacenamiento (GB)", "Memoria RAM",
     "Capacidad de RAM (GB)", "Última modificación por", "Fecha última modificación"
 ]
 
 TABLE_LABELS = [
                 "nombre", "marca", "modelo", "serial", "fecha_adquisicion", "estado",
-                "ubicacion", "sistema_operativo", "modelo_placa_base", "tarjeta_grafica",
-                "modelo_tarjeta_grafica", "ram_tarjeta", "tipo_almacenamiento",
+                "ubicacion", "sistema_operativo", "modelo_cpu", "modelo_placa_base",
+                "tarjeta_grafica", "modelo_tarjeta_grafica", "ram_tarjeta", "tipo_almacenamiento",
                 "capacidad_almacenamiento", "memoria_ram", "capacidad_ram"
 ]
 
-LABEL_CONVERSION = {LABELS[i]:TABLE_LABELS[i] for i in range(16)}
+LABEL_CONVERSION = {LABELS[i]:TABLE_LABELS[i] for i in range(len(LABELS)-2)}
 
 TREE_TAGS = {"Operativo": "operativo", "En reparación": "reparacion",
              "En reparacion": "reparacion", "Baja": "baja"}
@@ -44,10 +44,11 @@ TABLE_CREATION = f'''CREATE TABLE equipos (
                     `estado` VARCHAR(255),
                     `ubicacion` VARCHAR(255),
                     `sistema_operativo` VARCHAR(255),
+                    `modelo_cpu` VARCHAR(255),
                     `modelo_placa_base` VARCHAR(255),
                     `tarjeta_grafica` VARCHAR(255),
                     `modelo_tarjeta_grafica` VARCHAR(255),
-                    `ram_tarjeta` INTEGER,
+                    `ram_tarjeta` INTEGER DEFAULT 0,
                     `tipo_almacenamiento` VARCHAR(255),
                     `capacidad_almacenamiento` INTEGER,
                     `memoria_ram` VARCHAR(255),
@@ -70,12 +71,12 @@ TABLE_CREATION = f'''CREATE TABLE equipos (
 ADD_ENTRY = '''INSERT INTO `equipos`
                (`nombre`, `marca`, `modelo`, `serial`,
                `fecha_adquisicion`, `estado`, `ubicacion`,
-               `sistema_operativo`, `modelo_placa_base`,
-               `tarjeta_grafica`, `modelo_tarjeta_grafica`,
-               `ram_tarjeta`, `tipo_almacenamiento`,
-               `capacidad_almacenamiento`, `memoria_ram`,
-               `capacidad_ram`)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
+               `sistema_operativo`, `modelo_cpu`,
+               `modelo_placa_base`, `tarjeta_grafica`,
+               `modelo_tarjeta_grafica`, `ram_tarjeta`,
+               `tipo_almacenamiento`, `capacidad_almacenamiento`,
+               `memoria_ram`, `capacidad_ram`)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
 
 UPDATE_ENTRY = '''UPDATE `equipos` SET
         `nombre`=%s,
@@ -86,6 +87,7 @@ UPDATE_ENTRY = '''UPDATE `equipos` SET
         `estado`=%s,
         `ubicacion`=%s,
         `sistema_operativo`=%s,
+        `modelo_cpu`=%s,
         `modelo_placa_base`=%s,
         `tarjeta_grafica`=%s,
         `modelo_tarjeta_grafica`=%s,
