@@ -61,5 +61,6 @@ class DBWindow(ctk.CTkToplevel):
             if not self.db_tab.table.hidden:
                 self.db_tab.table.hide_show_dbinfo()
             info_clear(self.db_tab.info.entries)
+            self.db_tab.table.tree_deselect()
             db_showentries(self.db_tab)
             self.destroy()
