@@ -59,6 +59,10 @@ def db_addentry(self):
                                   params=[serial], fetch=True)
         if entry_exists:
             if messagebox.askyesno("", f"Se ha encontrado un equipo con el serial {serial}. ¿Quiere actualizar sus campos?"):
+                if not self.main_win.privs["UPDATE"]:
+                    messagebox.showerror("","El usuario no tiene permisos para modificar entradas")
+                    return
+
                 campos.append(entry_exists[0][0])
                 push_query(self.db,
                         UPDATE_ENTRY, params=campos)
@@ -67,6 +71,10 @@ def db_addentry(self):
                 messagebox.showinfo("Éxito", "Equipo actualizado correctamente.")
 
         else:
+            if not self.main_win.privs["INSERT"]:
+                messagebox.showerror("","El usuario no tiene permisos para añadir entradas")
+                return
+
             push_query(self.db,
                     ADD_ENTRY, params=campos)
 
@@ -74,14 +82,7 @@ def db_addentry(self):
             messagebox.showinfo("Éxito", "Equipo guardado correctamente.")
 
     except mysql.connector.Error as err:
-        if "UPDATE command" in str(err):
-            messagebox.showerror("","El usuario no tiene permisos para modificar entradas")
-
-        elif "INSERT command" in str(err):
-            messagebox.showerror("","El usuario no tiene permisos para añadir entradas")
-
-        else:
-            messagebox.showerror("", f"Sucedió el siguiente error: {err}")
+        messagebox.showerror("", f"Sucedió el siguiente error: {err}")
 
     except Exception as err:
         logger.exception("Error while trying to save/update device")
@@ -116,48 +117,51 @@ def db_loadrowinfo(self):
         elif type(entry) == ctk.CTkOptionMenu:
             entry.set(row[i])
 
-def db_deleterow(self):
+def db_deleterow(self, rows_to_delete):
     if not self.db.cnx:
         messagebox.showerror("", "Conéctese a una base de datos primero")
         return
 
-    selected_row = self.table.selection()
-    if not selected_row:
-        messagebox.showerror("Error", "No se puede identificar el equipo seleccionado.")
-        return
-    
-    serial = self.table.item(selected_row)["values"][4]
-
-    if not serial:
-        messagebox.showwarning("Añadir serial", "Añada el serial del equipo para eliminarlo")
+    if not rows_to_delete:
+        messagebox.showerror("Error", "No se han encontrado equipos a eliminar.")
         return
 
-    if messagebox.askyesno("Eliminar equipo", f"¿Quiere eliminar el equipo con serial {serial}?"):
+    deleted_rows = []
+
+    for row in rows_to_delete:
         try:
-            affected_rows = push_query(self.db,
-                    "DELETE FROM `equipos` WHERE serial= %s", params=[serial])
+            serial = self.table.item(row)["values"][4]
+            if not serial:
+                messagebox.showwarning("Añadir serial", "Añada el serial del equipo para eliminarlo")
+                continue
 
-            if not affected_rows:
+            affected_row = push_query(self.db,
+                        "DELETE FROM `equipos` WHERE serial= %s", params=[serial])
+
+            if not affected_row:
                 logger.error("Tried to remove device with serial: %s, but it was not found in the database", serial)
                 messagebox.showerror("Error", "No se ha encontrado el equipo con el serial seleccionado")
-                return
 
         except mysql.connector.Error as err:
-            if "DELETE command" in str(err):
-                messagebox.showerror("","El usuario no tiene permisos para eliminar entradas")
-            else:
-                messagebox.showerror("", f"Sucedió el siguiente error: {err}")
+            messagebox.showerror("", f"Sucedió el siguiente error: {err}")
 
         except Exception as err:
             logger.error("Error while trying to remove device from database", exc_info=True)
             messagebox.showerror("Error", f"Sucedió el siguiente error: {err}")
         else:
+            deleted_rows.append(serial)
             logger.info("Device with serial: %s has been removed", serial)
-            messagebox.showinfo("", "Equipo eliminado correctamente")
-            db_showentries(self)
-            info_clear(self.info.entries)
-            if not self.table.hidden:
-                self.table.hide_show_dbinfo()
+
+    if deleted_rows:
+        messagebox.showinfo("", f"Los siguientes equipos se han eliminado correctamente: {", ".join(deleted_rows)}")
+
+    else:
+        messagebox.showwarning("", "No se ha podido eliminar ningún equipo")
+
+    db_showentries(self)
+    info_clear(self.info.entries)
+    if not self.table.hidden:
+        self.table.hide_show_dbinfo()
 
 def db_search(self, strict):
     if not self.db.cnx:
