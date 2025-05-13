@@ -9,22 +9,24 @@ from src.logic import info_clear
 from tkinter import ttk
 
 class DBTab():
-    def __init__(self, master: tk.Frame, db: DBManager):
+    def __init__(self, master: tk.Frame, db: DBManager, main_win):
         self.master = master
         self.db = db
+        self.main_win = main_win
         self.tree_frame = ctk.CTkFrame(master, fg_color="transparent")
         self.info_frame = ctk.CTkFrame(master, fg_color="transparent")
-        self.info = DBInfo(self.info_frame, self.db, self)
-        self.table = DBView(self.tree_frame, self.db, self)
+        self.info = DBInfo(self.info_frame, self.db, self, self.main_win)
+        self.table = DBView(self.tree_frame, self.db, self, self.main_win)
         self.master.grid_columnconfigure(0, weight=3)
         self.master.grid_rowconfigure(0, weight=1)
         self.tree_frame.grid(row=0, column=0, sticky="nsew")
 
 class DBView(ttk.Treeview):
-    def __init__(self, master, db: DBManager, db_tab: DBTab):
+    def __init__(self, master, db: DBManager, db_tab: DBTab, main_win):
         self.master = master
         self.db = db
         self.db_tab = db_tab
+        self.main_win = main_win
         self.search_frame = ctk.CTkFrame(master, fg_color=None)
         self.search_label = ctk.CTkLabel(self.search_frame, text="Buscar:")
         self.search_filter = ctk.CTkOptionMenu(self.search_frame, values=LABELS[:len(LABELS)-2])
@@ -42,6 +44,8 @@ class DBView(ttk.Treeview):
         self.tree_label_frame = ctk.CTkFrame(master, fg_color=None)
         self.tree_label = ctk.CTkLabel(self.tree_label_frame, text="Total de equipos: 0", anchor="w")
         self.update_list_bttn = ctk.CTkButton(self.tree_label_frame, text="Actualizar lista", command= lambda: db_showentries(self.db_tab), width=100)
+        self.options_loadrow = ctk.CTkButton(self.tree_label_frame, text="Cargar equipo", command=lambda: self.load_selected_row(), state="disabled")
+        self.options_deleterow = ctk.CTkButton(self.tree_label_frame, text="Eliminar equipo(s)", command=lambda: self.tree_delete_selected(), fg_color="#D11C00", hover_color="#9E1500", state="disabled")
         self.hidden = True
 
         super().__init__(master,
@@ -56,11 +60,12 @@ class DBView(ttk.Treeview):
         self.tag_configure("baja", background="#FFEBEE")  # Rojo claro
 
         self.heading("ID", text="ID")
-        self.column("ID", width=40, anchor="center")
+        self.column("ID", width=40, minwidth=40, anchor="center", stretch=False)
 
         for col in LABELS:
             self.heading(col, text=col)
-            self.column(col, width=90,anchor="center")
+            self.column(col, width=100, minwidth=100, anchor="center", stretch=False)
+
         self.search_label.pack(side="left")
         self.search_filter.pack(side="left")
         self.search_bar.pack(side="left")
@@ -71,11 +76,17 @@ class DBView(ttk.Treeview):
         self.search_frame.pack(side="top", fill="x")
         self.pack(fill="both", expand=True)
         self.tree_label.pack(side="left", anchor="w")
+        self.options_loadrow.pack(side="right", anchor="e")
+        self.options_deleterow.pack(side="right", anchor="e")
         self.update_list_bttn.pack(side="right", anchor="e")
         self.tree_label_frame.pack(before=self.scrollbar_x, side="bottom", anchor="s", fill="x")
         self.scrollbar_y.pack(after=self.search_frame, side="right", fill="y")
-        self.bind("<Double-1>", lambda e: self.load_selected_row())
         self.search_bar.bind("<Return>", lambda e: db_search(self.db_tab, self.strict_search.get()))
+        self.bind("<Return>", lambda e: self.load_selected_row())
+        self.bind("<<TreeviewSelect>>", lambda e: self.tree_enable_bttns())
+        self.bind("<Double-1>", lambda e: self.load_selected_row())
+        self.bind("<Escape>", lambda e: self.tree_deselect())
+        self.bind("<Delete>", lambda e: self.tree_delete_selected())
 
     def clear_search(self):
         self.search_bar.delete(0, tk.END)
@@ -89,16 +100,53 @@ class DBView(ttk.Treeview):
             self.hidden = False
 
     def load_selected_row(self):
+        if not self.main_win.privs["DBInfo"] or len(self.selection()) > 1:
+            return
         db_loadrowinfo(self.db_tab)
         if self.hidden:
             self.hide_show_dbinfo()
 
+    def tree_deselect(self):
+        for i in self.selection():
+            self.selection_remove(i)
+        self.options_loadrow.configure(state="disabled")
+        self.options_deleterow.configure(state="disabled")
+
+    def tree_delete_selected(self):
+        if not self.selection():
+            return
+        
+        if not self.main_win.privs["DELETE"]:
+            messagebox.showerror("","El usuario no tiene permisos para eliminar entradas")
+            return
+        
+        rows_to_delete = self.selection()
+        serials = []
+        for row in rows_to_delete:
+            serials.append(self.item(row)["values"][4])
+        confirm_msg = f"¿Desea eliminar los siguientes equipos con los siguientes seriales? {', '.join(serials)}"
+        if messagebox.askyesno("", confirm_msg):
+            db_deleterow(self.db_tab, rows_to_delete)
+            self.tree_deselect()
+
+    def tree_enable_bttns(self):
+        if not self.selection():
+            return
+        if self.main_win.privs["DBInfo"]:
+            if len(self.selection()) > 1:
+                self.options_loadrow.configure(state="disabled")
+            else:
+                self.options_loadrow.configure(state="normal")
+        if self.main_win.privs["DELETE"]:
+            self.options_deleterow.configure(state="normal")
+
 class DBInfo(ctk.CTkFrame):
-    def __init__(self, master, db: DBManager, db_tab: DBTab):
+    def __init__(self, master, db: DBManager, db_tab: DBTab, main_win):
         super().__init__(master, fg_color=None)
         self.db = db
         self.master = master
         self.db_tab = db_tab
+        self.main_win = main_win
         self.entries = []
 
         self.title = ctk.CTkLabel(master, text="Datos del equipo", font=("Arial", 18))
@@ -136,16 +184,13 @@ class DBInfo(ctk.CTkFrame):
                     entry.configure(placeholder_text="dd/mm/aaaa")
 
         self.options_frame = ctk.CTkFrame(self, fg_color=None)
-        self.options_frame.rowconfigure((0, 1), weight=1)
+        self.options_frame.rowconfigure(0, weight=1)
         self.options_frame.columnconfigure((0, 1), weight=1)
         self.options_addrow = ctk.CTkButton(self.options_frame, text="Guardar/Modificar", command=lambda e: self.check_and_call_db_addentry())
         self.options_clear = ctk.CTkButton(self.options_frame, text="Limpiar campos", command=lambda: info_clear(self.entries))
-        self.options_loadrow = ctk.CTkButton(self.options_frame, text="Cargar equipo", command=lambda: db_loadrowinfo(self.db_tab))
-        self.options_deleterow = ctk.CTkButton(self.options_frame, text="Eliminar equipo", command=lambda: db_deleterow(self.db_tab))
+
         self.options_addrow.grid(row=0, column=0)
         self.options_clear.grid(row=0, column=1)
-        self.options_loadrow.grid(row=1, column=0)
-        self.options_deleterow.grid(row=1, column=1)
         self.options_frame.pack(fill="both", expand=False)
 
     def check_and_call_db_addentry(self):
