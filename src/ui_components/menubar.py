@@ -24,7 +24,7 @@ class Menubar(tk.Menu):
         self.m2 = tk.Menu(self, tearoff=0)
         self.m2.add_command(label="Limpiar campos", command=lambda: info_clear(self.db_tab.info.entries))
         self.m2.add_separator()
-        self.m2.add_command(label="Eliminar equipo", command=lambda: db_deleterow(self.db_tab))
+        self.m2.add_command(label="Eliminar equipo(s)", command=lambda: self.db_tab.table.tree_delete_selected())
         self.m2.add_command(label="Cargar equipo", command=lambda: db_loadrowinfo(self.db_tab))
         self.m2.add_separator()
         self.m2.add_command(label="Mostrar equipos", command=lambda: db_showentries(self.db_tab))
