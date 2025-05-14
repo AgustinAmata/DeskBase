@@ -59,11 +59,11 @@ class DBView(ttk.Treeview):
         self.tag_configure("reparacion", background="#FFF3E0")  # Naranja claro
         self.tag_configure("baja", background="#FFEBEE")  # Rojo claro
 
-        self.heading("ID", text="ID")
+        self.heading("ID", text="ID", command= lambda c="ID": self.col_sort(c, False))
         self.column("ID", width=40, minwidth=40, anchor="center", stretch=False)
 
         for col in LABELS:
-            self.heading(col, text=col)
+            self.heading(col, text=col, command= lambda c=col: self.col_sort(c, False))
             self.column(col, width=100, minwidth=100, anchor="center", stretch=False)
 
         self.search_label.pack(side="left")
@@ -94,13 +94,12 @@ class DBView(ttk.Treeview):
     def hide_show_dbinfo(self):
         if not self.hidden:
             self.db_tab.info_frame.grid_remove()
-            self.hidden = True
         else:
             self.db_tab.info_frame.grid(row=0, column=1, sticky="nsew")
-            self.hidden = False
+        self.hidden = not self.hidden
 
     def load_selected_row(self):
-        if not self.main_win.privs["DBInfo"] or len(self.selection()) > 1 or not self.selection():
+        if not self.main_win.privs["DBInfo"] or len(self.selection()) != 1:
             return
         db_loadrowinfo(self.db_tab)
         if self.hidden:
@@ -141,6 +140,22 @@ class DBView(ttk.Treeview):
                 self.options_loadrow.configure(state="normal")
         if self.main_win.privs["DELETE"]:
             self.options_deleterow.configure(state="normal")
+
+    def col_sort(self, col, descending):
+        def try_int_convert(value):
+            try:
+                return int(value)
+            except:
+                return value
+            
+        col_ids = [(try_int_convert(self.set(item, col)), item) for item in self.get_children("")]
+        col_ids.sort(reverse=descending)
+
+        for i, (val, item) in enumerate(col_ids):
+            print(self.set(item))
+            self.move(item, "",index=i)
+
+        self.heading(col, command= lambda: self.col_sort(col, not descending))
 
 class DBInfo(ctk.CTkFrame):
     def __init__(self, master, db: DBManager, db_tab: DBTab, main_win):
