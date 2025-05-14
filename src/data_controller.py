@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import logging
 import mysql.connector
-from src.constants import TREE_TAGS, ADD_ENTRY, UPDATE_ENTRY, LABEL_CONVERSION, LABELS
+from src.constants import TREE_TAGS, ADD_ENTRY, UPDATE_ENTRY, LABEL_CONVERSION, LABELS, TABLE_LABELS
 from src.db_manager import push_query
 from src.logic import info_clear
 from tkinter import messagebox
@@ -46,26 +46,39 @@ def db_showentries(self, filtered_rows=None):
         logger.error("Error while trying to load device list into DeskBase", exc_info=True)
         messagebox.showerror("", f"Error al cargar los equipos: {err}")
 
-def db_addentry(self):
+def db_addentry(self, campos):
     if not self.db.cnx:
         messagebox.showerror("", "Conéctese a una base de datos primero")
         return
         
     try:
-        campos = [entry.get() for entry in self.info.entries]
         serial = campos[LABELS.index("Serial*")]
         entry_exists = push_query(self.db,
                                   "SELECT * FROM `equipos` WHERE serial=%s",
                                   params=[serial], fetch=True)
         if entry_exists:
-            if messagebox.askyesno("", f"Se ha encontrado un equipo con el serial {serial}. ¿Quiere actualizar sus campos?"):
-                if not self.main_win.privs["UPDATE"]:
-                    messagebox.showerror("","El usuario no tiene permisos para modificar entradas")
-                    return
+            if entry_exists[0][1:-2] == campos:
+                return
 
-                campos.append(entry_exists[0][0])
+            if not self.main_win.privs["UPDATE"]:
+                messagebox.showerror("","El usuario no tiene permisos para modificar entradas")
+                return
+
+            if messagebox.askyesno("", f"Se ha encontrado un equipo con el serial {serial}. ¿Quiere actualizar sus campos?"):
+                row_id = entry_exists[0][0]
+                new_values = []
+                update_col_template = "`{col_name}`='{new_val}'"
+
+                for i in range(len(TABLE_LABELS)):
+                    old_val = entry_exists[0][i+1]
+                    poss_new_val = campos[i]
+                    if old_val != poss_new_val:
+                        new_values.append(update_col_template.format(col_name=TABLE_LABELS[i], new_val=poss_new_val))
+
+                new_vals_query = ", ".join(new_values)
+
                 push_query(self.db,
-                        UPDATE_ENTRY, params=campos)
+                        UPDATE_ENTRY.format(update_vals=new_vals_query), params=(row_id,))
 
                 logger.info("Updated device with serial: %s and id: %s", serial, campos[-1])
                 messagebox.showinfo("Éxito", "Equipo actualizado correctamente.")
