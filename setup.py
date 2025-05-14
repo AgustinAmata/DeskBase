@@ -12,5 +12,6 @@ setup(
                      "mysql-connector-python==9.2.0",
                      "numpy==2.2.4",
                      "pandas==2.2.3",
-                     "openpyxl==3.1.5"]
+                     "openpyxl==3.1.5",
+                     "matplotlib==3.10.3"]
 )
