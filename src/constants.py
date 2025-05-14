@@ -79,23 +79,7 @@ ADD_ENTRY = '''INSERT INTO `equipos`
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
 
 UPDATE_ENTRY = '''UPDATE `equipos` SET
-        `nombre`=%s,
-        `marca`=%s,
-        `modelo`=%s,
-        `serial`=%s,
-        `fecha_adquisicion`=%s,
-        `estado`=%s,
-        `ubicacion`=%s,
-        `sistema_operativo`=%s,
-        `modelo_cpu`=%s,
-        `modelo_placa_base`=%s,
-        `tarjeta_grafica`=%s,
-        `modelo_tarjeta_grafica`=%s,
-        `ram_tarjeta`=%s,
-        `tipo_almacenamiento`=%s,
-        `capacidad_almacenamiento`=%s,
-        `memoria_ram`=%s,
-        `capacidad_ram`=%s
+        {update_vals}
         WHERE `id`=%s
 '''
 
