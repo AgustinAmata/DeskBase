@@ -100,7 +100,7 @@ class DBView(ttk.Treeview):
             self.hidden = False
 
     def load_selected_row(self):
-        if not self.main_win.privs["DBInfo"] or len(self.selection()) > 1:
+        if not self.main_win.privs["DBInfo"] or len(self.selection()) > 1 or not self.selection():
             return
         db_loadrowinfo(self.db_tab)
         if self.hidden:
@@ -111,6 +111,8 @@ class DBView(ttk.Treeview):
             self.selection_remove(i)
         self.options_loadrow.configure(state="disabled")
         self.options_deleterow.configure(state="disabled")
+        if not self.hidden:
+            self.hide_show_dbinfo()
 
     def tree_delete_selected(self):
         if not self.selection():
@@ -194,29 +196,26 @@ class DBInfo(ctk.CTkFrame):
         self.options_frame.pack(fill="both", expand=False)
 
     def check_and_call_db_addentry(self):
-        campos_requeridos = (self.entries[0],
-                                self.entries[1],
-                                self.entries[2],
-                                self.entries[3])
+        campos = [entry.get() for entry in self.entries]
 
-        for entry in campos_requeridos:
-            if not entry.get().strip():
+        for entry in campos[:4]:
+            if not entry.strip():
                 messagebox.showwarning("Campos incompletos", "Por favor, completa al menos los campos marcados con * (tipo, serial, marca, modelo).")
                 return
             
-        if self.entries[4].get():
+        if campos[LABELS.index("Fecha de Adquisición")]:
             try:
-                datetime.strptime(self.entries[4].get(), "%d/%m/%Y")
+                datetime.strptime(campos[LABELS.index("Fecha de Adquisición")], "%d/%m/%Y")
             except Exception as err:
                 messagebox.showerror("Error", "Inserta el formato de fecha adecuado: dd/mm/aaaa")
                 return
             
-        for int_entry, name in zip(self.entries[LABELS.index("RAM Tarjeta Gráfica (GB)")::2], LABELS[LABELS.index("RAM Tarjeta Gráfica (GB)"):len(LABELS)-2:2]):
+        for int_entry, name in zip(campos[LABELS.index("RAM Tarjeta Gráfica (GB)")::2], LABELS[LABELS.index("RAM Tarjeta Gráfica (GB)"):len(LABELS)-2:2]):
             try:
-                int(int_entry.get())
+                campos[LABELS.index(name)] = int(int_entry)
 
             except Exception as err:
                 messagebox.showerror("", f"Inserte un número válido en {name}")
                 return
-            
-        db_addentry(self.db_tab)
+
+        db_addentry(self.db_tab, tuple(campos))
