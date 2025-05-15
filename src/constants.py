@@ -14,6 +14,12 @@ TABLE_LABELS = [
                 "capacidad_almacenamiento", "memoria_ram", "capacidad_ram"
 ]
 
+NUMERIC_LABELS = [
+    "RAM Tarjeta Gráfica (GB)",
+    "Capacidad de Almacenamiento (GB)",
+    "Capacidad de RAM (GB)"
+]
+
 LABEL_CONVERSION = {LABELS[i]:TABLE_LABELS[i] for i in range(len(LABELS)-2)}
 
 TREE_TAGS = {"Operativo": "operativo", "En reparación": "reparacion",
