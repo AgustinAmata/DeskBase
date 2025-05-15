@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
 from src.db_manager import DBManager
-from src.constants import LABELS, RULETA
+from src.constants import LABELS, RULETA, NUMERIC_LABELS
 from src.data_controller import db_addentry, db_deleterow, db_loadrowinfo, db_search, db_showentries
 from src.logic import info_clear
 from tkinter import ttk
@@ -124,7 +124,7 @@ class DBView(ttk.Treeview):
         rows_to_delete = self.selection()
         serials = []
         for row in rows_to_delete:
-            serials.append(self.item(row)["values"][4])
+            serials.append(str(self.item(row)["values"][4]))
         confirm_msg = f"¿Desea eliminar los siguientes equipos con los siguientes seriales? {', '.join(serials)}"
         if messagebox.askyesno("", confirm_msg):
             db_deleterow(self.db_tab, rows_to_delete)
@@ -142,17 +142,14 @@ class DBView(ttk.Treeview):
             self.options_deleterow.configure(state="normal")
 
     def col_sort(self, col, descending):
-        def try_int_convert(value):
-            try:
-                return int(value)
-            except:
-                return value
-            
-        col_ids = [(try_int_convert(self.set(item, col)), item) for item in self.get_children("")]
-        col_ids.sort(reverse=descending)
+        col_ids = [(self.set(item, col), item) for item in self.get_children("")]
+
+        if col in NUMERIC_LABELS:
+            col_ids.sort(key=lambda x: int(x[0]), reverse=descending)
+        else:
+            col_ids.sort(reverse=descending)
 
         for i, (val, item) in enumerate(col_ids):
-            print(self.set(item))
             self.move(item, "",index=i)
 
         self.heading(col, command= lambda: self.col_sort(col, not descending))
@@ -203,7 +200,7 @@ class DBInfo(ctk.CTkFrame):
         self.options_frame = ctk.CTkFrame(self, fg_color=None)
         self.options_frame.rowconfigure(0, weight=1)
         self.options_frame.columnconfigure((0, 1), weight=1)
-        self.options_addrow = ctk.CTkButton(self.options_frame, text="Guardar/Modificar", command=lambda e: self.check_and_call_db_addentry())
+        self.options_addrow = ctk.CTkButton(self.options_frame, text="Guardar/Modificar", command=lambda: self.check_and_call_db_addentry())
         self.options_clear = ctk.CTkButton(self.options_frame, text="Limpiar campos", command=lambda: info_clear(self.entries))
 
         self.options_addrow.grid(row=0, column=0)
@@ -225,9 +222,10 @@ class DBInfo(ctk.CTkFrame):
                 messagebox.showerror("Error", "Inserta el formato de fecha adecuado: dd/mm/aaaa")
                 return
             
-        for int_entry, name in zip(campos[LABELS.index("RAM Tarjeta Gráfica (GB)")::2], LABELS[LABELS.index("RAM Tarjeta Gráfica (GB)"):len(LABELS)-2:2]):
+        for name in NUMERIC_LABELS:
             try:
-                campos[LABELS.index(name)] = int(int_entry)
+                entry = campos[LABELS.index(name)]
+                campos[LABELS.index(name)] = int(entry)
 
             except Exception as err:
                 messagebox.showerror("", f"Inserte un número válido en {name}")
