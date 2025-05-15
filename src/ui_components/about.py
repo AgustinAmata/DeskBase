@@ -1,10 +1,11 @@
 import customtkinter as ctk
+from src.logic import CenterWindowToDisplay
 
 class About(ctk.CTkToplevel):
     def __init__(self, master):
         super().__init__(master)
         self.title("Acerca de")
-        self.geometry("300x200")
+        self.geometry(CenterWindowToDisplay(self, 400, 300, self._get_window_scaling()))
         self.wm_transient(master)
         self.about_frame = ctk.CTkFrame(self, fg_color="transparent")
 
