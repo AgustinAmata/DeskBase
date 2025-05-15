@@ -162,7 +162,7 @@ def db_deleterow(self, rows_to_delete):
             logger.error("Error while trying to remove device from database", exc_info=True)
             messagebox.showerror("Error", f"Sucedió el siguiente error: {err}")
         else:
-            deleted_rows.append(serial)
+            deleted_rows.append(str(serial))
             logger.info("Device with serial: %s has been removed", serial)
 
     if deleted_rows:
