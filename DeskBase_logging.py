@@ -29,7 +29,7 @@ LOGGING_INFO = {
       "level": "DEBUG",
       "formatter": "simple",
       "filters": ["standardLogFilter"],
-      "filename": "C:/Users/Agustin/Desktop/DeskBase/DeskBase_standard.log",
+      "filename": "./DeskBase_standard.log",
       "mode": "a"
     },
     "error": {
@@ -37,7 +37,7 @@ LOGGING_INFO = {
       "level": "ERROR",
       "formatter": "simple",
       "filters": ["errorLogFilter"],
-      "filename": "C:/Users/Agustin/Desktop/DeskBase/DeskBase_errors.log",
+      "filename": "./DeskBase_errors.log",
       "mode": "a"
     }
   },
