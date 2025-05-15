@@ -6,14 +6,16 @@ from src.ui_components.db_tab import DBTab
 from src.ui_components.login import LoginWindow
 from src.constants import TEST_QUERIES
 from src.db_manager import push_query
+from src.data_controller import db_showentries
+from src.logic import CenterWindowToDisplay
 
 ctk.set_appearance_mode("light")
 
 class MainApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("1200x700")
         self.title("DeskBase")
+        self.geometry(CenterWindowToDisplay(self, 1080, 720, self._get_window_scaling()))
         self.db = DBManager()
         self.maintab = MainTab(self, self.db)
         self.db_tab = self.maintab.devices_obj
@@ -28,6 +30,7 @@ class MainApp(ctk.CTk):
                       "DBInfo": False,
                       }
         self.protocol("WM_DELETE_WINDOW", self.close_everything)
+        self.bind("<F5>", lambda e: db_showentries(self.db_tab))
         self.update_privileges()
         self.withdraw()
 
