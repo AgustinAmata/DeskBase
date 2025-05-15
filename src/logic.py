@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from customtkinter import CTk
 import pandas as pd
 import tkinter as tk
 from pathlib import Path
@@ -57,3 +58,12 @@ def info_clear(entries):
             entry.set(entry._values[0])
         elif type(entry) == ctk.CTkEntry:
             entry.delete(0, tk.END)
+
+#From https://github.com/TomSchimansky/CustomTkinter/discussions/1820
+def CenterWindowToDisplay(Screen: CTk, width: int, height: int, scale_factor: float = 1.0):
+    """Centers the window to the main display/monitor"""
+    screen_width = Screen.winfo_screenwidth()
+    screen_height = Screen.winfo_screenheight()
+    x = int(((screen_width//2) - (width//2)) * scale_factor)
+    y = int(((screen_height//2) - (height//2)) * scale_factor)
+    return f"{width}x{height}+{x}+{y}"
