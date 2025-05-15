@@ -3,7 +3,7 @@ from tkinter import messagebox
 from src.data_controller import db_showentries
 from src.db_manager import DBManager
 from src.ui_components.db_tab import DBTab
-from src.logic import info_clear
+from src.logic import info_clear, CenterWindowToDisplay
 
 class DBWindow(ctk.CTkToplevel):
     def __init__(self, master, db: DBManager, db_tab: DBTab):
@@ -11,7 +11,7 @@ class DBWindow(ctk.CTkToplevel):
         self.master = master
         self.db = db
         self.db_tab = db_tab
-        self.geometry("400x300")
+        self.geometry(CenterWindowToDisplay(self, 400, 300, self._get_window_scaling()))
         self.title("Conectar a base de datos")
         self.wm_transient(master)
         self.top_frame = ctk.CTkFrame(self, fg_color=None)
