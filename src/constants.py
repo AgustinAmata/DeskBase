@@ -40,13 +40,35 @@ ESTADOS = ["Operativo", "En reparación", "En mantenimiento", "Baja", "Reserva"]
 RULETA = {"Marca*": MARCAS, "Sistema Operativo": SISTEMAS_OPERATIVOS, "Tarjeta Gráfica": TIPO_GRAFICA,
           "Tipo de Almacenamiento": TIPOS_ALMACENAMIENTO, "Memoria RAM": TIPOS_RAM, "Estado": ESTADOS}
 
+#First item -> x axis, second item -> y axis
+PLOT_OPTIONS = {
+    "Cantidad total de equipos por tipo": ["nombre", ""],
+    "Distribución de equipos por marca": ["marca", ""],
+    "Cantidad de equipos por ubicación": ["ubicacion", ""],
+    "Distribución de equipos por estado": ["estado", ""],
+    "Número de equipos por antigüedad": ["fecha_adquisicion", ""],
+    "Número de equipos por sistema operativo": ["sistema_operativo", ""]
+}
+
+RESTRICTION_CONDITIONS = {
+    "que contenga:": " LIKE '%{value}%'",
+    "que sea exacto a:": " LIKE '{value}'",
+    "que no contenga:": " NOT LIKE '%{value}%'",
+    "que no sea exacto a:": " NOT LIKE '{value}'",
+    "mayor que:": " > '{value}'",
+    "mayor o igual que:": " >= '{value}'",
+    "menor que:": " < '{value}'",
+    "menor o igual que:": " <= '{value}'",
+    "igual que:": " = '{value}'"
+}
+
 TABLE_CREATION = f'''CREATE TABLE equipos (
                     `id` INTEGER AUTO_INCREMENT,
                     `nombre` VARCHAR(255),
                     `marca` VARCHAR(255),
                     `modelo` VARCHAR(255),
                     `serial` VARCHAR(255) UNIQUE,
-                    `fecha_adquisicion` VARCHAR(255),
+                    `fecha_adquisicion` DATE,
                     `estado` VARCHAR(255),
                     `ubicacion` VARCHAR(255),
                     `sistema_operativo` VARCHAR(255),
