@@ -9,7 +9,7 @@ from src.logic import info_clear
 from tkinter import ttk
 
 class DBTab():
-    def __init__(self, master: tk.Frame, db: DBManager, main_win):
+    def __init__(self, master: ctk.CTkFrame, db: DBManager, main_win):
         self.master = master
         self.db = db
         self.main_win = main_win
@@ -195,7 +195,7 @@ class DBInfo(ctk.CTkFrame):
                 self.entries.append(entry)
 
                 if i == 4:
-                    entry.configure(placeholder_text="dd/mm/aaaa")
+                    entry.configure(placeholder_text="aaaa-mm-dd")
 
         self.options_frame = ctk.CTkFrame(self, fg_color=None)
         self.options_frame.rowconfigure(0, weight=1)
@@ -217,9 +217,9 @@ class DBInfo(ctk.CTkFrame):
             
         if campos[LABELS.index("Fecha de Adquisición")]:
             try:
-                datetime.strptime(campos[LABELS.index("Fecha de Adquisición")], "%d/%m/%Y")
+                datetime.strptime(campos[LABELS.index("Fecha de Adquisición")], "%Y-%m-%d")
             except Exception as err:
-                messagebox.showerror("Error", "Inserta el formato de fecha adecuado: dd/mm/aaaa")
+                messagebox.showerror("Error", "Inserta el formato de fecha adecuado: aaaa-mm-dd")
                 return
             
         for name in NUMERIC_LABELS:
