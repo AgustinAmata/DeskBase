@@ -44,5 +44,15 @@ LOGGING_INFO = {
   "root": {
     "level": "DEBUG",
     "handlers": ["standard", "error"]
+  },
+  "loggers": {
+    "matplotlib": {
+    "level": "WARNING",
+    "handlers": ["standard", "error"],
+    },
+    "PIL": {
+      "level": "WARNING",
+      "handlers": ["standard", "error"],
+    },
   }
 }
