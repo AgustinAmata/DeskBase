@@ -55,9 +55,9 @@ class DBView(ttk.Treeview):
             yscrollcommand=self.scrollbar_y.set,
             xscrollcommand=self.scrollbar_x.set)
 
-        self.tag_configure("operativo", background="#E8F5E9")  # Verde claro
-        self.tag_configure("reparacion", background="#FFF3E0")  # Naranja claro
-        self.tag_configure("baja", background="#FFEBEE")  # Rojo claro
+        self.tag_configure("operativo", background="#E8F5E9")
+        self.tag_configure("reparacion", background="#FFF3E0")
+        self.tag_configure("baja", background="#FFEBEE") 
 
         self.heading("ID", text="ID", command= lambda c="ID": self.col_sort(c, False))
         self.column("ID", width=40, minwidth=40, anchor="center", stretch=False)
