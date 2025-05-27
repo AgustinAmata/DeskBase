@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import matplotlib.pyplot as plt
 from tkinter import messagebox
 from src.data_controller import db_showentries
 from src.db_manager import DBManager
@@ -65,4 +66,6 @@ class LoginWindow(ctk.CTkToplevel):
     
     def close_everything(self):
         self.destroy()
+        plt.close()
+        self.master.quit()
         self.master.destroy()
