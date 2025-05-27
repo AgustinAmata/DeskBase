@@ -1,9 +1,11 @@
 import customtkinter as ctk
 import re
+import matplotlib.pyplot as plt
 from src.db_manager import DBManager
 from src.ui_components.menubar import Menubar
 from src.ui_components.db_tab import DBTab
 from src.ui_components.login import LoginWindow
+from src.ui_components.stats_tab import StatsTab
 from src.constants import TEST_QUERIES
 from src.db_manager import push_query
 from src.data_controller import db_showentries
@@ -18,7 +20,7 @@ class MainApp(ctk.CTk):
         self.geometry(CenterWindowToDisplay(self, 1080, 720, self._get_window_scaling()))
         self.db = DBManager()
         self.maintab = MainTab(self, self.db)
-        self.db_tab = self.maintab.devices_obj
+        self.db_tab = self.maintab.devices_tab
         self.login = LoginWindow(self, self.db, self.db_tab)
         self.menubar = Menubar(self, self.db, self.db_tab)
         self.privs = {
@@ -37,6 +39,8 @@ class MainApp(ctk.CTk):
     def close_everything(self):
         if self.db.cnx:
             self.db.close_connection(show_msg=False)
+        plt.close()
+        self.quit()
         self.destroy()
 
     def check_privileges(self):
@@ -56,17 +60,17 @@ class MainApp(ctk.CTk):
         state_bool = {False: "disabled", True: "normal"}
         self.privs["DBInfo"] = any([False if v==False else True for v in sub_dict.values()])
         if not self.privs["DBInfo"]:
-            self.maintab.devices_obj.table.device_add_bttn.configure(state="disabled")
+            self.maintab.devices_tab.table.device_add_bttn.configure(state="disabled")
 
             for i in ["Limpiar campos", "Eliminar equipo(s)", "Cargar equipo"]:
                 self.menubar.m2.entryconfigure(i, state="disabled")
-            self.maintab.devices_obj.info.options_clear.configure(state="disabled")
-            self.maintab.devices_obj.info.options_addrow.configure(state="disabled")
+            self.maintab.devices_tab.info.options_clear.configure(state="disabled")
+            self.maintab.devices_tab.info.options_addrow.configure(state="disabled")
 
         else:
-            self.maintab.devices_obj.table.device_add_bttn.configure(state="normal")
-            self.maintab.devices_obj.info.options_clear.configure(state="normal")
-            self.maintab.devices_obj.info.options_addrow.configure(state=state_bool[sub_dict["UPDATE"]])
+            self.maintab.devices_tab.table.device_add_bttn.configure(state="normal")
+            self.maintab.devices_tab.info.options_clear.configure(state="normal")
+            self.maintab.devices_tab.info.options_addrow.configure(state=state_bool[sub_dict["UPDATE"]])
             self.menubar.m2.entryconfigure("Limpiar campos", state="normal")
             self.menubar.m2.entryconfigure("Cargar equipo", state="normal")
             self.menubar.m2.entryconfigure("Eliminar equipo(s)", state=state_bool[sub_dict["DELETE"]])
@@ -76,8 +80,9 @@ class MainTab(ctk.CTkTabview):
         super().__init__(master)
         self.master = master
         self.db = db
-        self.devices_tab = self.add("Lista de equipos")
-        self.devices_obj = DBTab(self.devices_tab, self.db, self.master)
-        self.stats_tab = self.add("Estadísticas")
+        self.devices_frame = self.add("Lista de equipos")
+        self.devices_tab = DBTab(self.devices_frame, self.db, self.master)
+        self.stats_frame = self.add("Estadísticas")
+        self.stats_tab = StatsTab(self.stats_frame, self.db, self.master)
 
         self.pack(fill="both", expand=True)
