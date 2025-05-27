@@ -21,6 +21,9 @@ NUMERIC_LABELS = [
 ]
 
 LABEL_CONVERSION = {LABELS[i]:TABLE_LABELS[i] for i in range(len(LABELS)-2)}
+LABEL_CONVERSION["Última modificación por"] = "usuario_ultima_mod"
+
+REVERSE_LABEL_CONVERSION = {v:k for k,v in LABEL_CONVERSION.items()}
 
 TREE_TAGS = {"Operativo": "operativo", "En reparación": "reparacion",
              "En reparacion": "reparacion", "Baja": "baja"}
