@@ -24,11 +24,11 @@ class StatsTab(ctk.CTkTabview):
 
         self.fig_create_frame = self.add("Crear")
         self.fig_history_frame = self.add("Historial")
-        self.fig_view_frame =self.add("Vista")
+        self.fig_view_frame = self.add("Vista")
         self.fig_view = FigView(self.fig_view_frame, self.db, self.main_win)
         self.fig_history = FigHistory(self.fig_history_frame, self.db, self.main_win, self.fig_view, self)
         self.fig_create = FigCreate(self.fig_create_frame, self.db, self.main_win, self.fig_view, self)
-
+        self._segmented_button.winfo_children()[2].configure(state="disabled")
         self.pack(fill="both", expand=True)
 
 class FigView(ctk.CTkFrame):
@@ -43,8 +43,8 @@ class FigView(ctk.CTkFrame):
         self.axes_list = []
         self.fig, ax = plt.subplots()
         self.axes_list.append(ax)
-        self.axes_list[0].spines["top"].set_visible(False)
-        self.axes_list[0].spines["right"].set_visible(False)
+        # self.axes_list[0].spines["top"].set_visible(False)
+        # self.axes_list[0].spines["right"].set_visible(False)
         self.fig_canvas = FigureCanvasTkAgg(self.fig, master=self.master)
         self.fig_canvas.draw()
         self.fig_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
@@ -70,16 +70,21 @@ class FigCreate(ctk.CTkFrame):
         self.entries_error_msgs = {}
 
         self.plots_type_frame = ctk.CTkFrame(self.master)
-        self.plots_type_frame.grid_columnconfigure([0,1], weight=1)
+        self.plots_type_frame.grid_columnconfigure([0,1], weight=1, uniform="x")
         self.plot_select_label = ctk.CTkLabel(self.plots_type_frame, text="Tipo de estadística:")
         self.plot_opts = ctk.CTkOptionMenu(self.plots_type_frame, values=[""]+list(PLOT_OPTIONS.keys()), command= lambda choice: self.is_plot_selected(choice))
-        self.plot_select_label.grid(row=0, column=0, sticky="e", padx=(0,5))
-        self.plot_opts.grid(row=0, column=1, sticky="w")
-        self.plots_type_frame.grid(row=0, column=0, sticky="sew")
+        self.groupby_label = ctk.CTkLabel(self.plots_type_frame, text="Agrupar por:")
+        self.groupby_opts = ctk.CTkOptionMenu(self.plots_type_frame, values=[""], state="disabled", command=lambda choice: self.is_groupby_date_selected(choice))
+        self.groupby_date_label = ctk.CTkLabel(self.plots_type_frame, text="Separar por:")
+        self.groupby_date_opts = ctk.CTkOptionMenu(self.plots_type_frame, values=["Años", "Meses"], width=100)
+        self.plot_select_label.grid(row=0, column=0, padx=(100,0))
+        self.plot_opts.grid(row=1, column=0, padx=(100,0))
+        self.groupby_label.grid(row=0, column=1, padx=(0,100))
+        self.groupby_opts.grid(row=1, column=1, padx=(0,100))
+        self.plots_type_frame.grid(row=0, column=0, sticky="ew")
 
         self.restr_frame = ctk.CTkFrame(self.master)
-        # self.restr_error_msg = ctk.CTkLabel(self.restr_frame, text="", fg_color="red", corner_radius=6)
-        self.restr_frame.grid_columnconfigure([i for i in range(6)], weight=1)
+        self.restr_frame.grid_columnconfigure([i for i in range(6)], weight=1, uniform="y")
         self.restr_frame.grid_rowconfigure(0, weight=1)
         self.restr_frame.grid_rowconfigure([1,2,3], weight=1)
         self.restr_label = ctk.CTkLabel(self.restr_frame, text="Restricciones", font=(ctk.CTkFont, 18, "bold"))
@@ -91,7 +96,7 @@ class FigCreate(ctk.CTkFrame):
             opts.configure(command= lambda c, w=opts: self.select_restr_opts(c, w))
             conds = ctk.CTkOptionMenu(self.restr_frame, values=[""], state="disabled")
             params = ctk.CTkEntry(self.restr_frame, state="disabled")
-            opts.grid(row=i%3+1, column=(i//3)*3, sticky="ew", padx=(10,2))
+            opts.grid(row=i%3+1, column=(i//3)*3, sticky="e", padx=(10,2))
             conds.grid(row=i%3+1, column=(i//3)*3+1, sticky="ew", padx=(0,2))
             params.grid(row=i%3+1, column=(i//3)*3+2, sticky="w")
             self.restr_groups_list[opts] = [conds, params]
@@ -145,28 +150,44 @@ class FigCreate(ctk.CTkFrame):
 
     def clear_conf(self):
         self.plot_opts.set(self.plot_opts._values[0])
-        for box in self.restr_groups_list.keys():
-            box.set("")
-            box.configure(state="disabled")
-            self.select_restr_opts("", box)
-        self.create_plot_bttn.configure(state="disabled")
-        self.clear_conf_bttn.configure(state="disabled")
+        self.is_plot_selected("")
 
     def is_plot_selected(self, choice):
         if not choice:
+            self.groupby_opts.configure(values=[""], state="disabled")
             for box in self.restr_groups_list.keys():
                 box.set(box._values[0])
                 box.configure(state="disabled")
                 self.select_restr_opts("", box)
             self.create_plot_bttn.configure(state="disabled")
+            self.clear_conf_bttn.configure(state="disabled")
 
         else:
+            available_groups = [item for item in LABELS[:-1] if LABEL_CONVERSION[item] != PLOT_OPTIONS[choice][0]]
+            available_groups.pop(available_groups.index("Serial*"))
+            self.groupby_opts.configure(values=[""]+available_groups, state="normal")
             for box in self.restr_groups_list.keys():
                 box.configure(state="normal")
             self.create_plot_bttn.configure(state="normal")
             self.clear_conf_bttn.configure(state="normal")
 
+        self.groupby_opts.set(self.groupby_opts._values[0])
+        self.is_groupby_date_selected("")
+
+    def is_groupby_date_selected(self, choice):
+        if choice == "Fecha de Adquisición":
+            self.groupby_date_label.place(in_=self.groupby_label, x=self.groupby_opts._desired_width*1.5, rely=1, anchor="s", relwidth=1)
+            self.groupby_date_opts.place(in_=self.groupby_date_label, relx=0.5, y=self.groupby_date_label._current_height*1.5, anchor="center")
+        else:
+            self.groupby_date_label.place_forget()
+            self.groupby_date_opts.set(self.groupby_date_opts._values[0])
+            self.groupby_date_opts.place_forget()
+
     def check_and_validate(self):
+        if not self.db.cnx:
+            messagebox.showerror("", "Conéctese a una base de datos primero")
+            return
+
         invalid_entries = []
 
         for choice in self.int_entries.keys():
@@ -203,7 +224,7 @@ class FigCreate(ctk.CTkFrame):
             return
 
         cols = PLOT_OPTIONS[self.plot_opts.get()]
-        query = f"SELECT `id`, {"".join(cols)} FROM `equipos`"
+        query = f"SELECT * FROM `equipos`"
 
         restrictions = {k: v for k, v in self.restr_groups_list.items() if k.get() != ""}
 
@@ -252,9 +273,13 @@ class FigCreate(ctk.CTkFrame):
         else:
             query = query.strip(" AND ")
 
+        groupby = self.groupby_opts.get() if self.groupby_opts.get() != "Fecha de Adquisición" else self.groupby_date_opts.get()
+
         if push_query(self.db, query, fetch=True):
-            generate_plot(self.plot_opts.get(), query, self.db, self.fig_view)
-            self.stats_tab.fig_history.add_histentry(self.plot_opts.get(), restrictions, query)
+            generate_plot(self.plot_opts.get(), groupby, query, self.db, self.fig_view)
+            self.stats_tab.fig_history.add_histentry(self.plot_opts.get(), groupby, restrictions, query)
+            if self.stats_tab._segmented_button.winfo_children()[2].cget("state") == "disabled":
+                self.stats_tab._segmented_button.winfo_children()[2].configure(state="normal")
             self.stats_tab.set("Vista")
         else:
             messagebox.showerror("", "No se han podido encontrar datos con las restricciones impuestas.")
@@ -276,18 +301,25 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
         self.history_frame = ctk.CTkFrame(self.master)
         self.history_frame.columnconfigure(0, weight=1)
         self.history_frame.rowconfigure(0,weight=1)
-        self.hist_scrollbar_y = ctk.CTkScrollbar(self.history_frame, command=self.yview)
-        self.hist_scrollbar_x = ctk.CTkScrollbar(self.history_frame, orientation="horizontal", command=self.xview)
+        self.hist_scrollbar_y = ctk.CTkScrollbar(self.history_frame, orientation="vertical")
+        self.hist_scrollbar_x = ctk.CTkScrollbar(self.history_frame, orientation="horizontal")
 
         self.history = ttk.Treeview(self.history_frame,
+                                    selectmode="browse",
                                     show="headings",
-                                    columns=["Tipo de estadística", "Restricciones"],
+                                    columns=["Tipo de estadística", "Agrupar por", "Restricciones"],
                                     yscrollcommand=self.hist_scrollbar_y.set,
                                     xscrollcommand=self.hist_scrollbar_x.set)
+
+        self.hist_scrollbar_x.configure(command=self.history.xview)
+        self.hist_scrollbar_y.configure(command=self.history.yview)
+
         self.history.heading("Tipo de estadística", text="Tipo de estadística", command= lambda c="Tipo de estadística": self.col_sort(c, False))
         self.history.column("Tipo de estadística", width=400, minwidth=400, anchor="center", stretch=False)
+        self.history.heading("Agrupar por", text="Agrupar por", command= lambda c="Agrupar por": self.col_sort(c, False))
+        self.history.column("Agrupar por", width=150, minwidth=150, anchor="center", stretch=False)
         self.history.heading("Restricciones", text="Restricciones", command= lambda c="Restricciones": self.col_sort(c, False))
-        self.history.column("Restricciones", width=400, minwidth=400, anchor="center", stretch=True)
+        self.history.column("Restricciones", width=700, minwidth=400, anchor="center", stretch=False)
 
         self.hist_scrollbar_x.grid(row=1, column=0, sticky="new")
         self.hist_scrollbar_y.grid(row=0, column=1, sticky="nse")
@@ -304,8 +336,6 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
         self.hist_up = ctk.CTkButton(self.bttns_frame, text="Entrada anterior", state="disabled", command=lambda: self.entry_up())
         self.hist_down = ctk.CTkButton(self.bttns_frame, text="Siguiente entrada", state="disabled", command=lambda: self.entry_down())
         self.history.bind("<<TreeviewSelect>>", lambda e: self.select_histentry())
-        self.main_win.bind("<Up>", lambda e: self.entry_up())
-        self.main_win.bind("<Down>", lambda e: self.entry_down())
         self.create_plot_bttn.grid(row=0, column=0, pady=(50,0))
         self.delete_histentry_bttn.grid(row=1, column=0, sticky="s")
         self.modify_histentry_bttn.grid(row=2, column=0, sticky="n")
@@ -337,8 +367,9 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
 
         for i, entry in enumerate(self.hist_entries):
             fig = entry["plot_option"]
+            groupby_opt = entry["groupby"]
             restrictions = [" ".join(fields) for fields in entry["restrictions"]]
-            self.history.insert("", "end", values=[fig, ", ".join(restrictions)], iid=i)
+            self.history.insert("", "end", values=[fig, groupby_opt,", ".join(restrictions)], iid=i)
 
         self.is_hist_empty()
 
@@ -352,13 +383,13 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
                 if type(child) == ctk.CTkButton:
                     child.configure(state="normal")
 
-    def add_histentry(self, plot_opt, restrictions, query):
+    def add_histentry(self, plot_opt, groupby, restrictions, query):
         restr_entries = []
 
         for choice, (conds, params) in restrictions.items():
             restr_entries.append([choice.get(), conds.get(), params.get()])
 
-        json_dict = {"plot_option": plot_opt, "restrictions": restr_entries, "query": query}
+        json_dict = {"plot_option": plot_opt, "groupby": groupby, "restrictions": restr_entries, "query": query}
 
         if json_dict in self.hist_entries:
             return
@@ -373,7 +404,7 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
 
         self.hist_entries.append(json_dict)
         str_restrs = [" ".join(entry) for entry in restr_entries]
-        self.history.insert("", "end", values=[plot_opt, ", ".join(str_restrs)], iid=len(self.hist_entries)-1)
+        self.history.insert("", "end", values=[plot_opt, groupby, ", ".join(str_restrs)], iid=len(self.hist_entries)-1)
         self.is_hist_empty()
 
     def select_histentry(self):
@@ -390,7 +421,7 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
         for col, item in entry.items():
             if col == "Restricciones" and item:
                 self.entryview.insert("end", text=col+":\n"+"\n".join(item.split(", ")))
-            elif col == "Tipo de estadística":
+            elif col in ["Tipo de estadística", "Agrupar por"]:
                 self.entryview.insert("end", text=col+":\n"+item+"\n\n")
         self.entryview.configure(state="disabled")
 
@@ -412,8 +443,9 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
             self.history.delete(*self.history.get_children())
             for i in range(len(self.hist_entries)):
                 fig = self.hist_entries[i]["plot_option"]
+                groupby_opt = self.hist_entries[i]["groupby"]
                 restrictions = [" ".join(fields) for fields in self.hist_entries[i]["restrictions"]]
-                self.history.insert("", "end", values=[fig, ", ".join(restrictions)], iid=i)
+                self.history.insert("", "end", values=[fig, groupby_opt,", ".join(restrictions)], iid=i)
 
             with open("./DeskBase_history.json", mode="w") as json_file:
                 json.dump(self.hist_entries, json_file, indent=2)
@@ -430,6 +462,13 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
         fig_create.clear_conf()
         fig_create.plot_opts.set(row_dict["plot_option"])
         fig_create.is_plot_selected(row_dict["plot_option"])
+        if row_dict["groupby"] in ["Años", "Meses"]:
+            fig_create.groupby_opts.set("Fecha de Adquisición")
+            fig_create.is_groupby_date_selected("Fecha de Adquisición")
+            fig_create.groupby_date_opts.set(row_dict["groupby"])
+        else:
+            fig_create.groupby_opts.set(row_dict["groupby"])
+            fig_create.is_groupby_date_selected("")
 
         for widget, (choice, conds, params), i in zip(fig_create.restr_groups_list,
                                                      row_dict["restrictions"],
@@ -450,10 +489,16 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
             messagebox.showwarning("", "Seleccione una entrada para crear una figura")
             return
 
+        if not self.db.cnx:
+            messagebox.showerror("", "Conéctese a una base de datos primero")
+            return
+
         row_dict = self.hist_entries[int(rows[0])]
 
         if push_query(self.db, row_dict["query"], fetch=True):
-            generate_plot(row_dict["plot_option"], row_dict["query"], self.db, self.fig_view)
+            generate_plot(row_dict["plot_option"], row_dict["groupby"], row_dict["query"], self.db, self.fig_view)
+            if self.stats_tab._segmented_button.winfo_children()[2].cget("state") == "disabled":
+                self.stats_tab._segmented_button.winfo_children()[2].configure(state="normal")
             self.stats_tab.set("Vista")
         else:
             messagebox.showerror("", "No se han podido encontrar datos con las restricciones impuestas.")
@@ -476,25 +521,19 @@ class FigHistory(ctk.CTkFrame, ttk.Treeview):
         if not self.master.winfo_ismapped() or children == []:
             return
         
-        rows = self.history.selection()
-        if rows:
-            rows = rows[0]
+        row = self.history.selection()[0] if self.history.selection() else ""
+        row_to_move = self.history.prev(row) if row not in ["", children[0]] else children[-1]
 
-        if not rows or rows == children[0]:
-            self.history.selection_set(children[-1])
-        else:
-            self.history.selection_set(self.history.prev(rows))
+        self.history.selection_set(row_to_move)
+        self.history.focus(row_to_move)
 
     def entry_down(self):
         children = self.history.get_children()
         if not self.master.winfo_ismapped() or children == []:
             return
-        
-        rows = self.history.selection()
-        if rows:
-            rows = rows[0]
 
-        if not rows or rows == children[-1]:
-            self.history.selection_set(children[0])
-        else:
-            self.history.selection_set(self.history.next(rows))
+        row = self.history.selection()[0] if self.history.selection() else ""
+        row_to_move = self.history.next(row) if row not in ["", children[-1]] else children[0]
+
+        self.history.selection_set(row_to_move)
+        self.history.focus(row_to_move)
