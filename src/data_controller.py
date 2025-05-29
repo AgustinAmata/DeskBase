@@ -103,8 +103,7 @@ def db_addentry(self, campos):
     else:
         db_showentries(self)
         info_clear(self.info.entries)
-        if not self.table.hidden:
-            self.table.hide_show_dbinfo()
+        self.table.tree_deselect()
 
 def db_loadrowinfo(self):
     if not self.db.cnx:
@@ -173,8 +172,7 @@ def db_deleterow(self, rows_to_delete):
 
     db_showentries(self)
     info_clear(self.info.entries)
-    if not self.table.hidden:
-        self.table.hide_show_dbinfo()
+    self.table.tree_deselect()
 
 def db_search(self, strict):
     if not self.db.cnx:
