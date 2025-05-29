@@ -1,13 +1,21 @@
 import customtkinter as ctk
+import sys
+import os
 from tkinter import messagebox
 from src.data_controller import db_showentries
 from src.db_manager import DBManager
 from src.ui_components.db_tab import DBTab
 from src.logic import info_clear, CenterWindowToDisplay
 
+def resource_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+    return os.path.join(base_path, relative_path)
+
 class DBWindow(ctk.CTkToplevel):
     def __init__(self, master, db: DBManager, db_tab: DBTab):
         super().__init__(master)
+        self.after(250, lambda: self.iconbitmap(resource_path("assets/DeskBase_icon.ico")))
+        print(resource_path("assets/DeskBase_icon.ico"))
         self.master = master
         self.db = db
         self.db_tab = db_tab
