@@ -1,6 +1,8 @@
 import customtkinter as ctk
 import re
 import matplotlib.pyplot as plt
+import sys
+import os
 from src.db_manager import DBManager
 from src.ui_components.menubar import Menubar
 from src.ui_components.db_tab import DBTab
@@ -13,10 +15,15 @@ from src.logic import CenterWindowToDisplay
 
 ctk.set_appearance_mode("light")
 
+def resource_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
+    return os.path.join(base_path, relative_path)
+
 class MainApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("DeskBase")
+        self.iconbitmap(resource_path("assets/DeskBase_icon.ico"))
         self.geometry(CenterWindowToDisplay(self, 1080, 720, self._get_window_scaling()))
         self.db = DBManager()
         self.maintab = MainTab(self, self.db)
